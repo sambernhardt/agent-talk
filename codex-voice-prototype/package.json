@@ -1,0 +1,19 @@
+{
+  "name": "codex-voice-prototype",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "ai": "^7.0.165",
+    "ws": "^8.22.2"
+  },
+  "private": true
+}

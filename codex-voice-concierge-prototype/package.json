@@ -1,0 +1,19 @@
+{
+  "name": "codex-voice-concierge-prototype",
+  "version": "1.0.0",
+  "description": "Realtime conversational companion delegating work to an existing Codex chat",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs",
+    "smoke": "node smoke.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "ws": "^8.22.2"
+  },
+  "private": true
+}
