@@ -5,8 +5,8 @@ import {homedir} from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
 import {fileURLToPath} from 'node:url';
-import {pickChat} from '../terminal-prototype/picker.mjs';
-import {main as terminal} from '../terminal-prototype/cli.mjs';
+import {pickChat} from '../terminal/picker.mjs';
+import {main as terminal} from '../terminal/cli.mjs';
 
 const configDir = path.join(homedir(), '.config', 'agent-talk');
 const configFile = path.join(configDir, 'config.json');
@@ -70,7 +70,7 @@ async function run() {
   await mkdir(configDir,{recursive:true,mode:0o700});
   const port=await freePort(); const origin=`http://127.0.0.1:${port}`;
   console.log('Starting local voice relay…');
-  const relay=spawn(process.execPath,[fileURLToPath(new URL('../codex-voice-concierge-prototype/server.mjs',import.meta.url))],{
+  const relay=spawn(process.execPath,[fileURLToPath(new URL('../relay/server.mjs',import.meta.url))],{
     env:{...process.env,PORT:String(port),AI_GATEWAY_API_KEY:key,VOICE_MODE_TERMINAL_ONLY:'1',CODEX_VOICE_DIAGNOSTICS_PATH:path.join(configDir,'diagnostics.jsonl')},stdio:['ignore','pipe','pipe']});
   let exited=false, failure=null;
   relay.once('error',error=>{failure=error;});relay.once('exit',()=>{exited=true;});

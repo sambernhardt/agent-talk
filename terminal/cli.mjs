@@ -3,7 +3,7 @@ import {createRequire} from 'node:module';
 import {fileURLToPath} from 'node:url';
 import {VoiceSession} from './session.mjs';
 import {NativeAudio, prepareAudio} from './audio.mjs';
-import {SessionCost} from '../codex-voice-concierge-prototype/session-cost.mjs';
+import {SessionCost} from '../relay/session-cost.mjs';
 import {Controls, render, controlsRow} from './ui.mjs';
 import {handoffWriter} from './handoff-file.mjs';
 import {pickChat} from './picker.mjs';
@@ -63,7 +63,7 @@ export async function resolveThreadLabel(opts, fetchImpl = fetch) {
 }
 export async function main(args = process.argv.slice(2)) {
   const opts = options(args);
-  if (opts.help) { console.log(`agent-talk terminal\nUsage: node terminal-prototype/cli.mjs [--pick] [--start] [--thread ID] [--relay http://127.0.0.1:4320] [--label "Chat title"]\n       node terminal-prototype/cli.mjs --thread ID --demo [--frames N]\n\nWithout --thread, opens a filterable chat picker. --pick always opens the picker.\n--thread preselects a chat in the picker; --start begins voice after selection.\nShows the chat title from the relay; --label overrides the display name.\nStarts idle. S start, X stop, M mute/unmute, Q or Ctrl-C quit.\nMouse buttons work with SGR terminal mouse support.\nReal audio: macOS + Swift command line tools; existing concierge relay required.\nRelay credentials are read from its loopback HTML; no gateway key is read here.\n--demo never connects to a relay or opens audio. --frames prints finite fixture frames.\nUse headphones: native audio has no browser echo cancellation.`); return; }
+  if (opts.help) { console.log(`agent-talk terminal\nUsage: node terminal/cli.mjs [--pick] [--start] [--thread ID] [--relay http://127.0.0.1:4320] [--label "Chat title"]\n       node terminal/cli.mjs --thread ID --demo [--frames N]\n\nWithout --thread, opens a filterable chat picker. --pick always opens the picker.\n--thread preselects a chat in the picker; --start begins voice after selection.\nShows the chat title from the relay; --label overrides the display name.\nStarts idle. S start, X stop, M mute/unmute, Q or Ctrl-C quit.\nMouse buttons work with SGR terminal mouse support.\nReal audio: macOS + Swift command line tools; existing concierge relay required.\nRelay credentials are read from its loopback HTML; no gateway key is read here.\n--demo never connects to a relay or opens audio. --frames prints finite fixture frames.\nUse headphones: native audio has no browser echo cancellation.`); return; }
   if (!opts.frames && (!process.stdin.isTTY || !process.stdout.isTTY)) throw new Error('Interactive UI needs a TTY. Run in an interactive terminal, or use --demo --frames 1.');
   if (opts.pick) {
     const chat = await pickChat(await listChats(opts.relay), {preferredId:opts.thread || process.env.CODEX_THREAD_ID});
@@ -73,8 +73,8 @@ export async function main(args = process.argv.slice(2)) {
   let WebSocket;
   if (!opts.demo) {
     await prepareAudio();
-    const require = createRequire(new URL('../codex-voice-concierge-prototype/package.json', import.meta.url));
-    try { WebSocket = require('ws'); } catch { throw new Error('Missing relay dependency ws. Install dependencies in codex-voice-concierge-prototype.'); }
+    const require = createRequire(new URL('../relay/package.json', import.meta.url));
+    try { WebSocket = require('ws'); } catch { throw new Error('Missing relay dependency ws. Install dependencies in relay.'); }
   }
   const session = new VoiceSession({thread:opts.thread,
     saveHandoff:handoffWriter(),

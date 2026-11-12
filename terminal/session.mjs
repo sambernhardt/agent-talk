@@ -1,5 +1,5 @@
-import {SessionCost} from '../codex-voice-concierge-prototype/session-cost.mjs';
-import {reduceTranscript} from '../codex-voice-concierge-prototype/frontend/transcript-store.mjs';
+import {SessionCost} from '../relay/session-cost.mjs';
+import {reduceTranscript} from '../relay/frontend/transcript-store.mjs';
 export function level(pcm) {
   let sum = 0, count = Math.floor(pcm.length / 2);
   for (let i = 0; i < count; i++) sum += (pcm.readInt16LE(i * 2) / 32768) ** 2;

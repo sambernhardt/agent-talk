@@ -1,5 +1,5 @@
 {
-  "name": "codex-voice-concierge-prototype",
+  "name": "relay",
   "version": "1.0.0",
   "description": "Realtime conversational companion delegating work to an existing Codex chat",
   "main": "index.js",

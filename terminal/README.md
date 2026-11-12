@@ -3,10 +3,10 @@
 A terminal client for the existing concierge relay: explicit chat binding, elapsed time, shared session-cost estimate/final usage, independent input/output waveform histories, and start/stop/mute controls. This is the primary voice interface; it shares the existing relay.
 
 ```sh
-node terminal-prototype/cli.mjs --help
-node terminal-prototype/cli.mjs --pick --start
-node terminal-prototype/cli.mjs --thread YOUR_CHAT_ID
-node terminal-prototype/cli.mjs --thread YOUR_CHAT_ID --relay http://127.0.0.1:4320
+node terminal/cli.mjs --help
+node terminal/cli.mjs --pick --start
+node terminal/cli.mjs --thread YOUR_CHAT_ID
+node terminal/cli.mjs --thread YOUR_CHAT_ID --relay http://127.0.0.1:4320
 ```
 
 With no `--thread`, the CLI opens a chat picker. Type to filter titles and workspace paths, use arrows to select, Enter to open, or Esc to cancel. `--pick --thread ID` preselects the originating chat while allowing a different selection. `--start` begins voice immediately after selection; without it the client starts idle. The picker selects existing chats and does not create a new Codex chat. The relay must already be running.
@@ -26,10 +26,10 @@ The repo-local `codex-voice-terminal` skill uses the local relay on port 4320 an
 ## Offline verification
 
 ```sh
-node terminal-prototype/cli.mjs --thread fixture --demo --frames 1
-node terminal-prototype/cli.mjs --thread fixture --demo
-node --test terminal-prototype/*.test.mjs
-swiftc -module-cache-path /tmp/codex-voice-terminal-module-cache terminal-prototype/audio.swift -o /tmp/codex-voice-terminal-audio-check
+node terminal/cli.mjs --thread fixture --demo --frames 1
+node terminal/cli.mjs --thread fixture --demo
+node --test terminal/*.test.mjs
+swiftc -module-cache-path /tmp/codex-voice-terminal-module-cache terminal/audio.swift -o /tmp/codex-voice-terminal-audio-check
 ```
 
 Demo mode labels fixture waves/cost, skips native build/devices, and makes no network or billed calls. S/X/M/Q remain usable. `--frames N` prints finite frames without a TTY. Compiling the helper does not run it. Real microphone capture/playback and billed relay sessions have intentionally not been exercised.

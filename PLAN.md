@@ -26,7 +26,7 @@ On resume, provide a compact summary, pending task state, and new results. Prese
 
 ## Active direction: terminal voice
 
-Use `terminal-prototype` as the primary interface, sharing the conversational relay and existing Codex handoff behavior. Focus on terminal audio, transcript streaming, session cost, keyboard controls, and reliable task delivery. Preserve the two browser references.
+Use `terminal` as the primary interface, sharing the conversational relay and existing Codex handoff behavior. Focus on terminal audio, transcript streaming, session cost, keyboard controls, and reliable task delivery. Preserve the two browser references.
 
 Retire the Electron app, menu panel, capsule, attached chin, and standalone orb from this branch. The full desktop experiments are preserved in checkpoint commit `5c96c9f` on `main`.
 

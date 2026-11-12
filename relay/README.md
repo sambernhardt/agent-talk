@@ -11,7 +11,7 @@ Does a realtime conversational companion make asynchronous Codex work feel more 
 Requires Node 24+, Codex CLI with `queue` support, and `AI_GATEWAY_API_KEY` in the launching environment.
 
 ```sh
-cd codex-voice-concierge-prototype
+cd relay
 npm install
 npm start
 ```
