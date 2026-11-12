@@ -1,4 +1,4 @@
-# Voice Mode
+# agent-talk
 
 Interactive terminal voice for coding agents. Codex is supported; Claude is coming soon.
 
@@ -6,7 +6,7 @@ Interactive terminal voice for coding agents. Codex is supported; Claude is comi
 npx agent-talk
 ```
 
-Choose an agent, filter your chats, and press Enter to start voice. First launch asks for an AI Gateway token. Requires macOS, Node.js 22+, Swift command line tools, and an authenticated Codex CLI with `codex queue` support. See [setup and credentials](VOICE-MODE.md).
+Choose an agent, filter your chats, and press Enter to start voice. First launch asks for an AI Gateway token. Requires macOS, Node.js 22+, Swift command line tools, and an authenticated Codex CLI with `codex queue` support. See [setup and credentials](AGENT-TALK.md).
 
 For a locally packed tarball, use `npx --yes --package=/tmp/agent-talk-0.1.0.tgz agent-talk`.
 

@@ -1,4 +1,4 @@
-# Talk to Codex — conversational prototype
+# agent-talk — conversational prototype
 
 A separate experiment alongside `../codex-voice-prototype` (the direct voice interface on port 4318). This version runs on **http://127.0.0.1:4320**. It does not replace or edit the original.
 

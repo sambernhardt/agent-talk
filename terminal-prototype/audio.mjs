@@ -4,7 +4,7 @@ import {stat, mkdir} from 'node:fs/promises';
 import {homedir} from 'node:os';
 import path from 'node:path';
 const source = fileURLToPath(new URL('./audio.swift', import.meta.url));
-const binary = path.join(homedir(), 'Library', 'Caches', 'voice-mode', 'audio-host-0.1.0');
+const binary = path.join(homedir(), 'Library', 'Caches', 'agent-talk', 'audio-host-0.1.0');
 // Generated speech arrives faster than playback. Bound memory independently of
 // playback lag; the native pipe and semaphore still pace the output device.
 export const MAX_PLAYBACK_BYTES = 24000 * 2 * 120;

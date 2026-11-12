@@ -1,4 +1,4 @@
-# Codex voice terminal
+# agent-talk terminal
 
 A terminal client for the existing concierge relay: explicit chat binding, elapsed time, shared session-cost estimate/final usage, independent input/output waveform histories, and start/stop/mute controls. This is the primary voice interface; it shares the existing relay.
 

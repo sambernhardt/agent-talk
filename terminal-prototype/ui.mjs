@@ -20,7 +20,7 @@ export function render(s, {columns = 80, rows = 24, demo = false, input = [], ou
   const cost = s.cost?.snapshot();
   const compact=rows<16;
   const lines = [
-    `  CODEX VOICE${demo ? '  ·  DEMO / FIXTURE · NO AUDIO OR NETWORK' : ''}`,
+    `  AGENT TALK${demo ? '  ·  DEMO / FIXTURE · NO AUDIO OR NETWORK' : ''}`,
     `  Chat ${clean(s.threadLabel || 'Current chat')}`, `  ${clean(s.notice)}`,
     `  ${clean(s.state).toUpperCase()}${s.muted ? ' · MIC MUTED' : ''}   ${duration(cost?.elapsedSeconds || 0)}   ${demo ? 'Fixture' : cost?.estimated === false ? 'Usage' : 'Estimate'} $${(cost?.cost || 0).toFixed(4)}`,
     '  Voice $3/hr · excludes Codex/text charges', ...(!compact?['']:[]),

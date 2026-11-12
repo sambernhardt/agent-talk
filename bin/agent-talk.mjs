@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {pickChat} from '../terminal-prototype/picker.mjs';
 import {main as terminal} from '../terminal-prototype/cli.mjs';
 
-const configDir = path.join(homedir(), '.config', 'voice-mode');
+const configDir = path.join(homedir(), '.config', 'agent-talk');
 const configFile = path.join(configDir, 'config.json');
 function promptToken() {
   return new Promise(resolve => {
@@ -31,6 +31,10 @@ async function credentials(force=false) {
   if (!force) {
     try { const value=JSON.parse(await readFile(configFile,'utf8')).gatewayToken; if(typeof value==='string' && value.trim()) return value; }
     catch(error) { if(error.code!=='ENOENT') throw Error(`Cannot read ${configFile}: ${error.message}`); }
+    // Reuse credentials from releases before the agent-talk rename.
+    const legacyFile = path.join(homedir(), '.config', 'voice-mode', 'config.json');
+    try { const value=JSON.parse(await readFile(legacyFile,'utf8')).gatewayToken; if(typeof value==='string' && value.trim()) return value; }
+    catch(error) { if(error.code!=='ENOENT') throw Error(`Cannot read legacy token setup: ${error.message}`); }
   }
   const key=await promptToken(); if(!key) return null;
   await mkdir(configDir,{recursive:true,mode:0o700});
@@ -46,7 +50,7 @@ async function freePort() {
 async function run() {
   const args=process.argv.slice(2);
   if(args.includes('--help') || args.includes('-h')) {
-    console.log('Voice Mode\nUsage: agent-talk [setup | --demo | --help]\n\nChoose an agent, filter your chats, and press Enter to start voice.\nCodex supported; Claude coming soon.\nRequires macOS, Swift command line tools, Codex CLI with queue support,\nand an AI Gateway token. S start, X stop, M mute, Q quit.\nsetup replaces the saved token; AI_GATEWAY_API_KEY overrides saved credentials.');return;
+    console.log('agent-talk\nUsage: agent-talk [setup | --demo | --help]\n\nChoose an agent, filter your chats, and press Enter to start voice.\nCodex supported; Claude coming soon.\nRequires macOS, Swift command line tools, Codex CLI with queue support,\nand an AI Gateway token. S start, X stop, M mute, Q quit.\nsetup replaces the saved token; AI_GATEWAY_API_KEY overrides saved credentials.');return;
   }
   if(args.length>1 || (args.length && !['setup','--demo'].includes(args[0]))) throw Error('Unknown argument. Run agent-talk --help.');
   if(!process.stdin.isTTY || !process.stdout.isTTY) throw Error('Run agent-talk in an interactive terminal.');
@@ -54,15 +58,16 @@ async function run() {
   if(args[0]==='setup') { if(await credentials(true)) console.log('AI Gateway token saved. Run agent-talk to begin.'); return; }
   let agent;
   do {
-    agent=await pickChat([{id:'codex',name:'Codex'},{id:'claude',name:'Claude · Coming soon'}],{title:'Voice Mode · Choose your agent'});
+    agent=await pickChat([{id:'codex',name:'Codex'},{id:'claude',name:'Claude · Coming soon'}],{title:'agent-talk · Choose your agent'});
     if(!agent) return;
     if(agent.id==='claude') { console.log('Claude support is coming soon. Choose Codex to start voice.'); }
   } while(agent.id!=='codex');
-  if(process.platform!=='darwin') throw Error('Voice Mode currently requires macOS.');
+  if(process.platform!=='darwin') throw Error('agent-talk currently requires macOS.');
   const codex=process.env.CODEX_BIN || 'codex';
   const check=spawnSync(codex,['queue','--help'],{encoding:'utf8'});
   if(check.error || check.status!==0) throw Error('Install/sign in to Codex CLI with `codex queue` support first.');
   const key=await credentials(); if(!key) return;
+  await mkdir(configDir,{recursive:true,mode:0o700});
   const port=await freePort(); const origin=`http://127.0.0.1:${port}`;
   console.log('Starting local voice relay…');
   const relay=spawn(process.execPath,[fileURLToPath(new URL('../codex-voice-concierge-prototype/server.mjs',import.meta.url))],{
@@ -89,4 +94,4 @@ async function run() {
     process.off('exit',stop);
   }
 }
-run().catch(error=>{console.error(`Voice Mode: ${error.message}`);process.exitCode=1;});
+run().catch(error=>{console.error(`agent-talk: ${error.message}`);process.exitCode=1;});

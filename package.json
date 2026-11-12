@@ -4,7 +4,7 @@
   "description": "Interactive terminal voice companion for coding agents. Codex supported; Claude coming soon.",
   "type": "module",
   "bin": {
-    "agent-talk": "bin/voice-mode.mjs"
+    "agent-talk": "bin/agent-talk.mjs"
   },
   "engines": {
     "node": ">=22"
@@ -13,9 +13,9 @@
     "darwin"
   ],
   "files": [
-    "bin/voice-mode.mjs",
+    "bin/agent-talk.mjs",
     "bin/check-package.mjs",
-    "VOICE-MODE.md",
+    "AGENT-TALK.md",
     "terminal-prototype/audio.swift",
     "codex-voice-concierge-prototype/package.json",
     "codex-voice-concierge-prototype/frontend/transcript-store.mjs",

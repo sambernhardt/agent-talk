@@ -7,7 +7,7 @@ export function filterChats(chats, query) {
 }
 const plain = value => String(value || '').replace(/[\x00-\x1f\x7f-\x9f]/g, ' ');
 
-export function pickChat(chats, {input=process.stdin, output=process.stdout, preferredId, title='Codex Voice · Choose a chat'}={}) {
+export function pickChat(chats, {input=process.stdin, output=process.stdout, preferredId, title='agent-talk · Choose a Codex chat'}={}) {
   if (!chats.length) throw new Error('No Codex chats found. Create a chat in Codex and try again.');
   if (!input.isTTY || !output.isTTY) throw new Error('The chat picker requires an interactive terminal.');
   return new Promise(resolve => {
