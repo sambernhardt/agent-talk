@@ -6,7 +6,7 @@ import {handoffWriter} from './handoff-file.mjs';
 import {VoiceSession} from './session.mjs';
 import {render} from './ui.mjs';
 
-test('handoff display uses queue ID and saves the complete body privately',async()=>{
+test('handoff summary links to the complete body saved privately',async()=>{
  const save=handoffWriter();let file;
  const session=new VoiceSession({thread:'thread-id',saveHandoff:async data=>(file=await save(data))});
  const text='Voice companion handoff\n\nTask: Full request with relevant context.\n'.repeat(30);
@@ -17,13 +17,17 @@ test('handoff display uses queue ID and saves the complete body privately',async
   assert.equal((await stat(file)).mode&0o777,0o600);
   assert.equal((await stat(path.dirname(file))).mode&0o777,0o700);
   const frame=render(session,{rows:12,columns:100});
-  assert.match(frame,/Voice companion handoff · a1b2c3d4 · queued/);
+  assert.match(frame.split('\n')[4],/1 job queued for Codex/);
+  assert.ok(!frame.includes('Voice companion handoff ·'));
+  assert.ok(!frame.includes('Voice $3/hr'));
   assert.match(frame,/handoff-a1b2c3d4.txt/);assert.ok(frame.includes('file://'));
   assert.ok(!frame.includes('Full request with relevant context'));
   session.receive({type:'work-status',id:'other',state:'completed'});
   assert.equal(session.handoff.state,'queued');
   session.receive({type:'work-status',id:'a1b2c3d4',state:'working'});
-  assert.match(session.notice,/a1b2c3d4 · working/);
+  assert.match(render(session,{color:true}).split('\n')[4],/\x1b\[90m  1 job being worked on by Codex\x1b\[39m/);
+  session.receive({type:'work-status',id:'a1b2c3d4',state:'completed'});
+  assert.match(render(session).split('\n')[4],/1 job completed by Codex/);
   session.fail(new Error('Microphone disconnected'));
   session.receive({type:'work-status',id:'a1b2c3d4',state:'completed'});
   assert.match(render(session,{rows:12}),/Microphone disconnected/);
@@ -37,5 +41,5 @@ test('file persistence failure does not end the voice session',async()=>{
  session.state='listening';session.receive({type:'delegating',id:'id',text:'request'});
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(session.state,'listening');assert.equal(session.handoff.fileError,true);
- assert.match(render(session),/details file unavailable/);
+ assert.match(render(session).split('\n')[4],/1 job queued for Codex/);
 });

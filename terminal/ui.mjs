@@ -19,18 +19,21 @@ export function render(s,{columns=80,rows=24,demo=false,input=[],output=[],time=
  const overlay=(y,x,text)=>{if(y>=0&&y<height)lines[y]=(lines[y].slice(0,x).padEnd(x)+text).slice(0,width);};
  put(0,`  AGENT TALK${demo?' · DEMO / NO AUDIO OR NETWORK':''}`);put(1,title.slice(0,Math.max(0,changeX-2)));
  put(3,`  ${clean(s.state).toUpperCase()}${s.muted?' · MIC MUTED':''}   ${duration(cost?.elapsedSeconds||0)}   ${demo?'Fixture':cost?.estimated===false?'Usage':'Estimate'} $${(cost?.cost||0).toFixed(4)}`);
- put(4,'  Voice $3/hr · excludes Codex/text charges');
+ const jobText={queued:'1 job queued for Codex',working:'1 job being worked on by Codex',completed:'1 job completed by Codex',failed:'1 job failed in Codex',error:'1 job failed in Codex'}[s.handoff?.state];
+ if(jobText)put(4,`  ${jobText}`);
  let top=6;if(showWaveforms&&rows>=16){const waveWidth=Math.max(1,Math.min(58,width-7));put(6,`  IN  ${waveform(input,waveWidth)}`);put(7,`  OUT ${waveform(output,waveWidth)}`);top=9;}
- let bottom=Math.max(top,height-4),fileRow=-1;
- if(s.handoff?.path||s.handoff?.fileError){fileRow=bottom;put(fileRow,s.handoff.path?`  Details: handoff-${clean(s.handoff.id)}.txt`:'  Handoff details file unavailable');bottom--;}
+ const bottom=Math.max(top,height-4);
  if(showTranscript){const transcript=transcriptLines(s.messages||[],columns),count=Math.min(transcript.length,Math.max(0,bottom-top+1));const start=bottom-count+1;transcript.slice(-count||transcript.length).forEach((line,i)=>put(start+i,line));}
  const available=Math.max(0,bottom-top),orbHeight=Math.min(14,available),level=output.at(-1)??s.output??0,state=orbState(s,level),phase=motionPhase??time*(state==='thinking'?2.3:state==='talking'?1.1:.5);
  const orb=showTranscript?[]:asciiOrb({columns:width,rows:orbHeight,time:phase,state,amplitude:level,color}),orbTop=top+Math.floor((available-orb.length)/2);
  orb.forEach((line,i)=>{lines[orbTop+i]=line;});
- const notice=clean(s.notice);if(notice!=='Press S to start'&&!notice.startsWith('Ready ·'))put(height-3,`  ${notice}`);
+ const notice=clean(s.notice);if(notice!=='Press S to start'&&!notice.startsWith('Ready ·')&&!notice.startsWith('Voice companion handoff ·'))put(height-3,`  ${notice}`);
  for(const hit of hits)if(!['t','w'].includes(hit.key))overlay(hit.y,hit.x,hit.text);
  if(configOpen){const x=Math.max(0,width-24);overlay(2,x,`[T] Transcript  ${showTranscript?'On':'Off'}`.padEnd(24));overlay(3,x,`[W] Waveforms   ${showWaveforms?'On':'Off'}`.padEnd(24));}
- if(fileRow>=0&&s.handoff?.path)lines[fileRow]=`\x1b]8;;${pathToFileURL(s.handoff.path).href}\x1b\\${lines[fileRow]}\x1b]8;;\x1b\\`;
+ if(jobText){
+  if(color)lines[4]=`\x1b[90m${lines[4]}\x1b[39m`;
+  if(s.handoff?.path)lines[4]=`\x1b]8;;${pathToFileURL(s.handoff.path).href}\x1b\\${lines[4]}\x1b]8;;\x1b\\`;
+ }
  return lines.join('\n');
 }
 export class Controls{

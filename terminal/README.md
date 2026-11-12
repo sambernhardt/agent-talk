@@ -39,3 +39,5 @@ Demo mode labels fixture waves/cost, skips native build/devices, and makes no ne
 The screen pins the agent/chat title and `[H Change]` shortcut at the top, with voice controls at the bottom. H opens the agent/chat picker (Claude is marked Coming soon). Selecting another chat stops voice, clears the old transcript and meter, and waits for S before starting in the new chat; cancelling preserves the current session. C opens Config; T toggles the transcript, W toggles both IN/OUT waveforms, and Esc closes Config. Preferences are saved to `~/.config/agent-talk/ui.json`; defaults are transcript off and waveforms off. The ASCII orb centers in the remaining space and is omitted when there is too little room.
 
 Waveforms are hidden by default. Transcript mode replaces the orb and uses the main content area; turning it off restores the orb. Saved display preferences still take precedence over defaults.
+
+Codex job status appears in gray directly below the session state and cost estimate. Click the status to open the saved handoff details.

@@ -1,6 +1,6 @@
 {
   "name": "agent-talk",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Interactive terminal voice companion for coding agents. Codex supported; Claude coming soon.",
   "type": "module",
   "bin": {
