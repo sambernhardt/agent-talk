@@ -1,13 +1,16 @@
 import {spawn, spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-import {stat} from 'node:fs/promises';
+import {stat, mkdir} from 'node:fs/promises';
+import {homedir} from 'node:os';
+import path from 'node:path';
 const source = fileURLToPath(new URL('./audio.swift', import.meta.url));
-const binary = fileURLToPath(new URL('./.audio-host', import.meta.url));
+const binary = path.join(homedir(), 'Library', 'Caches', 'voice-mode', 'audio-host-0.1.0');
 // Generated speech arrives faster than playback. Bound memory independently of
 // playback lag; the native pipe and semaphore still pace the output device.
 export const MAX_PLAYBACK_BYTES = 24000 * 2 * 120;
 export async function prepareAudio() {
   if (process.platform !== 'darwin') throw new Error('Native audio requires macOS and the Swift command line tools. Demo works on any OS.');
+  await mkdir(path.dirname(binary), {recursive:true,mode:0o700});
   const built = await stat(binary).catch(() => null);
   if (!built || built.mtimeMs < (await stat(source)).mtimeMs) {
     const r = spawnSync('/usr/bin/swiftc', [source, '-o', binary], {encoding:'utf8'});

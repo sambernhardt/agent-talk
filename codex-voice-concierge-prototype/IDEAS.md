@@ -21,7 +21,7 @@ Captured November 10, 2026. Exploration notes, not implementation commitments.
 
 ## Standalone project
 
-- Move this experiment into its own project under `/Users/sam/Dev`, with its own Git history and branches for alternate approaches.
+- Move this experiment into its own project under `a standalone development directory`, with its own Git history and branches for alternate approaches.
 - Preserve the original direct voice version and the conversational version as distinct experiments.
 - Keep existing Codex chat integration when moving; a separate repository does not require a separate work chat.
-- Choose the destination and handle the running server's path when performing the move. Completed: both versions now live in `/Users/sam/Dev/talk-to-codex`; see the root `PLAN.md`.
+- Choose the destination and handle the running server's path when performing the move. Completed: both versions now live in `the standalone repository`; see the root `PLAN.md`.

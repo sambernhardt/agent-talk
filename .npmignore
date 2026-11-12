@@ -1,0 +1,6 @@
+**/*.test.mjs
+**/smoke.mjs
+**/node_modules
+**/.audio-host
+**/*.jsonl
+**/.env*

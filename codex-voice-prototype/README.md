@@ -7,7 +7,7 @@ Continuous conversation with an existing Codex desktop chat. GPT-Live transcribe
 Requires Node 24+, Codex CLI with `queue` support (tested with 0.167.0), and `AI_GATEWAY_API_KEY` in the server environment.
 
 ```sh
-cd /Users/sam/Dev/talk-to-codex/codex-voice-prototype
+cd codex-voice-prototype
 npm install
 npm start
 ```

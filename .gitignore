@@ -7,3 +7,11 @@ node_modules/
 *.wav
 *.mp3
 .DS_Store
+
+# Credentials and local runtime artifacts
+.npmrc
+*.pem
+*.key
+*.p12
+*.tgz
+config.local.json

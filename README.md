@@ -1,6 +1,14 @@
-# Talk to Codex
+# Voice Mode
 
-A terminal voice companion for existing Codex chats. The terminal client is the active development direction; the browser prototypes remain as references and supply the shared conversational relay.
+Interactive terminal voice for coding agents. Codex is supported; Claude is coming soon.
+
+```sh
+npx voice-mode
+```
+
+Choose an agent, filter your chats, and press Enter to start voice. First launch asks for an AI Gateway token. Requires macOS, Node.js 22+, Swift command line tools, and an authenticated Codex CLI with `codex queue` support. See [setup and credentials](VOICE-MODE.md).
+
+For a locally packed tarball, use `npx --yes --package=/tmp/voice-mode-0.1.0.tgz voice-mode`.
 
 ## Terminal voice
 
@@ -58,7 +66,7 @@ node --check codex-voice-concierge-prototype/server.mjs
 
 Gateway smoke checks are described in each approach's README. They consume Gateway credits and use simulated Codex work.
 
-This repository was extracted from Flow state's tools directory. No remote repository is configured. Local dependencies and diagnostic recordings/logs are excluded from commits.
+This repository was extracted from Flow state's tools directory. Local dependencies and diagnostic recordings/logs are excluded from commits.
 
 
 ## Previous desktop experiments

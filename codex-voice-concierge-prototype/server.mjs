@@ -67,7 +67,7 @@ const server = http.createServer(async (req, res) => {
   const headers = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
   try {
     if (url.pathname === '/') {
-      let html = await readFile(new URL(development ? './index.html' : './dist/index.html', import.meta.url), 'utf8');
+      let html = process.env.VOICE_MODE_TERMINAL_ONLY === '1' ? '<!doctype html><meta name="voice-token" content="__TOKEN__"><title>Voice Mode</title>' : await readFile(new URL(development ? './index.html' : './dist/index.html', import.meta.url), 'utf8');
       if (vite) html = await vite.transformIndexHtml(url.pathname, html);
       html = html.replace('__TOKEN__', token);
       res.writeHead(200, { ...headers, 'Content-Type': 'text/html', 'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://127.0.0.1:" + port + "; worker-src 'self' blob:; media-src 'self' blob:; frame-ancestors 'none'" }).end(html); return;

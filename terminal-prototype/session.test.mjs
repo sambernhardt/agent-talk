@@ -69,8 +69,9 @@ test('fragmented mouse input and keyboard dispatch controls; remote escapes sani
   assert.deepEqual(actions,['s','m','x','q']);
   const frame = render({thread:'t',state:'idle',notice:'bad\x1b[2J',transcript:''}); assert.ok(!frame.includes('\x1b'));
 });
-test('CLI rejects missing binding, remote relay, invalid fixture options', () => {
-  assert.throws(() => options(['--demo']), /--thread/);
+test('CLI validates binding, remote relay, and fixture options', () => {
+  assert.equal(options(['--demo']).thread, 'preview');
+  assert.throws(() => options(['--thread','bad id']), /valid chat ID/);
   assert.throws(() => options(['--thread','t','--relay','http://example.com']), /127.0.0.1/);
   assert.throws(() => options(['--thread','t','--frames','2']), /--demo/);
   assert.equal(options(['--thread','t','--demo','--frames','1']).frames,1);

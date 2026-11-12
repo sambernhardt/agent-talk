@@ -4,11 +4,14 @@ A terminal client for the existing concierge relay: explicit chat binding, elaps
 
 ```sh
 node terminal-prototype/cli.mjs --help
+node terminal-prototype/cli.mjs --pick --start
 node terminal-prototype/cli.mjs --thread YOUR_CHAT_ID
 node terminal-prototype/cli.mjs --thread YOUR_CHAT_ID --relay http://127.0.0.1:4320
 ```
 
-The real client starts idle; S opens microphone and connects. X stops voice, M toggles microphone mute, Q/Ctrl-C exits and restores terminal modes. SGR mouse clicks on the buttons work when the terminal forwards mouse input; keyboard controls always work. Small terminals clip the layout, so use the keyboard if buttons are clipped.
+With no `--thread`, the CLI opens a chat picker. Type to filter titles and workspace paths, use arrows to select, Enter to open, or Esc to cancel. `--pick --thread ID` preselects the originating chat while allowing a different selection. `--start` begins voice immediately after selection; without it the client starts idle. The picker selects existing chats and does not create a new Codex chat. The relay must already be running.
+
+By default the real client starts idle; S opens microphone and connects. X stops voice, M toggles microphone mute, Q/Ctrl-C exits and restores terminal modes. SGR mouse clicks on the buttons work when the terminal forwards mouse input; keyboard controls always work. Small terminals clip the layout, so use the keyboard if buttons are clipped.
 
 The header resolves the selected chat's title from the relay at launch. Use `--label "Chat title"` to supply a display label explicitly. If title lookup is unavailable, it shows “Current chat”; the required `--thread` ID still binds all voice work to the original chat. Existing skill invocations work without new arguments.
 

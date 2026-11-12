@@ -1,0 +1,49 @@
+{
+  "name": "voice-mode",
+  "version": "0.1.0",
+  "description": "Interactive terminal voice companion for coding agents. Codex supported; Claude coming soon.",
+  "type": "module",
+  "bin": {
+    "voice-mode": "bin/voice-mode.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "os": [
+    "darwin"
+  ],
+  "files": [
+    "bin/voice-mode.mjs",
+    "bin/check-package.mjs",
+    "VOICE-MODE.md",
+    "terminal-prototype/audio.swift",
+    "codex-voice-concierge-prototype/package.json",
+    "codex-voice-concierge-prototype/frontend/transcript-store.mjs",
+    "terminal-prototype/audio.mjs",
+    "terminal-prototype/cli.mjs",
+    "terminal-prototype/handoff-file.mjs",
+    "terminal-prototype/picker.mjs",
+    "terminal-prototype/session.mjs",
+    "terminal-prototype/ui.mjs",
+    "codex-voice-concierge-prototype/diagnostics.mjs",
+    "codex-voice-concierge-prototype/handoff.mjs",
+    "codex-voice-concierge-prototype/queue-message.mjs",
+    "codex-voice-concierge-prototype/replies.mjs",
+    "codex-voice-concierge-prototype/reply-watcher.mjs",
+    "codex-voice-concierge-prototype/server.mjs",
+    "codex-voice-concierge-prototype/session-context.mjs",
+    "codex-voice-concierge-prototype/session-cost.mjs"
+  ],
+  "scripts": {
+    "test": "node --test terminal-prototype/*.test.mjs",
+    "prepack": "node bin/check-package.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.22.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sambernhardt/voice-mode.git"
+  },
+  "homepage": "https://github.com/sambernhardt/voice-mode"
+}

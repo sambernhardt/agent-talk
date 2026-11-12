@@ -6,6 +6,7 @@ import {NativeAudio, prepareAudio} from './audio.mjs';
 import {SessionCost} from '../codex-voice-concierge-prototype/session-cost.mjs';
 import {Controls, render, controlsRow} from './ui.mjs';
 import {handoffWriter} from './handoff-file.mjs';
+import {pickChat} from './picker.mjs';
 
 export function options(args) {
   const result = {relay:'http://127.0.0.1:4320', demo:false, frames:0};
@@ -13,13 +14,18 @@ export function options(args) {
     const arg = args[i];
     if (arg === '--help' || arg === '-h') result.help = true;
     else if (arg === '--demo') result.demo = true;
+    else if (arg === '--pick') result.pick = true;
+    else if (arg === '--start') result.start = true;
     else if (['--thread','--relay','--frames','--label'].includes(arg)) {
       const value = args[++i]; if (!value || value.startsWith('--')) throw new Error(`${arg} requires a value`);
       result[arg.slice(2)] = arg === '--frames' ? Number(value) : value;
     } else throw new Error(`Unknown option ${arg}`);
   }
   if (result.help) return result;
-  if (!result.thread || /[\x00-\x20\x7f]/.test(result.thread)) throw new Error('Pass --thread ID explicitly (the current Codex chat ID).');
+  if (result.thread && /[\x00-\x20\x7f]/.test(result.thread)) throw new Error('--thread requires a valid chat ID.');
+  if (!result.thread && !result.demo) result.pick = true;
+  if (result.demo && !result.thread) result.thread = 'preview';
+  if (result.demo && result.pick) throw new Error('--pick requires a live relay; omit --demo.');
   if (!Number.isInteger(result.frames) || result.frames < 0 || (result.frames && !result.demo)) throw new Error('--frames requires --demo and a positive integer');
   const url = new URL(result.relay);
   if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error('--relay must be http://127.0.0.1:PORT');
@@ -35,6 +41,14 @@ async function relayToken(relay, fetchImpl = fetch) {
   if (!token || token === '__TOKEN__') throw new Error('Relay did not provide a voice token.');
   return token;
 }
+export async function listChats(relay, fetchImpl = fetch) {
+  const token = await relayToken(relay, fetchImpl);
+  const response = await fetchImpl(`${relay}/api/threads`, {headers:{Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(10000),redirect:'error'});
+  if (!response.ok) throw new Error(`Chat lookup returned HTTP ${response.status}`);
+  const data = await response.json();
+  if (!Array.isArray(data.threads)) throw new Error('Relay returned an invalid chat list.');
+  return data.threads.filter(chat => typeof chat.id === 'string' && chat.id && !/[\x00-\x20\x7f]/.test(chat.id)).map(chat => ({...chat,name:typeof chat.name === 'string' && chat.name.trim() ? chat.name.trim() : 'Untitled chat'}));
+}
 export async function resolveThreadLabel(opts, fetchImpl = fetch) {
   if (opts.label?.trim()) return opts.label.trim();
   if (opts.demo) return 'Voice preview';
@@ -49,8 +63,13 @@ export async function resolveThreadLabel(opts, fetchImpl = fetch) {
 }
 export async function main(args = process.argv.slice(2)) {
   const opts = options(args);
-  if (opts.help) { console.log(`Codex Voice Terminal\nUsage: node terminal-prototype/cli.mjs --thread ID [--relay http://127.0.0.1:4320] [--label "Chat title"]\n       node terminal-prototype/cli.mjs --thread ID --demo [--frames N]\n\nShows the chat title from the relay; --label overrides the display name.\nStarts idle. S start, X stop, M mute/unmute, Q or Ctrl-C quit.\nMouse buttons work with SGR terminal mouse support.\nReal audio: macOS + Swift command line tools; existing concierge relay required.\nRelay credentials are read from its loopback HTML; no gateway key is read here.\n--demo never connects to a relay or opens audio. --frames prints finite fixture frames.\nUse headphones: native audio has no browser echo cancellation.`); return; }
-  if (!opts.frames && (!process.stdin.isTTY || !process.stdout.isTTY)) throw new Error('Interactive UI needs a TTY. Launch exec_command with tty:true, or use --demo --frames 1.');
+  if (opts.help) { console.log(`Codex Voice Terminal\nUsage: node terminal-prototype/cli.mjs [--pick] [--start] [--thread ID] [--relay http://127.0.0.1:4320] [--label "Chat title"]\n       node terminal-prototype/cli.mjs --thread ID --demo [--frames N]\n\nWithout --thread, opens a filterable chat picker. --pick always opens the picker.\n--thread preselects a chat in the picker; --start begins voice after selection.\nShows the chat title from the relay; --label overrides the display name.\nStarts idle. S start, X stop, M mute/unmute, Q or Ctrl-C quit.\nMouse buttons work with SGR terminal mouse support.\nReal audio: macOS + Swift command line tools; existing concierge relay required.\nRelay credentials are read from its loopback HTML; no gateway key is read here.\n--demo never connects to a relay or opens audio. --frames prints finite fixture frames.\nUse headphones: native audio has no browser echo cancellation.`); return; }
+  if (!opts.frames && (!process.stdin.isTTY || !process.stdout.isTTY)) throw new Error('Interactive UI needs a TTY. Run in an interactive terminal, or use --demo --frames 1.');
+  if (opts.pick) {
+    const chat = await pickChat(await listChats(opts.relay), {preferredId:opts.thread || process.env.CODEX_THREAD_ID});
+    if (!chat) return;
+    opts.thread = chat.id; opts.label = chat.name;
+  }
   let WebSocket;
   if (!opts.demo) {
     await prepareAudio();
@@ -84,7 +103,9 @@ export async function main(args = process.argv.slice(2)) {
     clearInterval(timer); process.stdin.off('data', onData); process.stdin.setRawMode(Boolean(wasRaw)); process.stdin.pause();
     process.stdout.write('\x1b[?1000l\x1b[?1006l\x1b[?25h\x1b[?1049l');
   };
-  const quit = () => { if (quitting) return; quitting = true; session.stop(); restore(); process.off('SIGINT', quit); process.off('SIGTERM', quit); process.off('exit', restore); };
+  let resolveDone;
+  const done = new Promise(resolve => { resolveDone = resolve; });
+  const quit = () => { if (quitting) return; quitting = true; session.stop(); restore(); process.off('SIGINT', quit); process.off('SIGTERM', quit); process.off('exit', restore); resolveDone(); };
   const controls = new Controls(key => {
     if (key === 'q') quit();
     else if (key === 'x') session.stop();
@@ -97,5 +118,7 @@ export async function main(args = process.argv.slice(2)) {
   process.stdin.setRawMode(true); process.stdin.resume(); process.stdin.on('data', onData);
   process.stdout.write('\x1b[?1049h\x1b[?25l\x1b[?1000h\x1b[?1006h');
   timer = setInterval(draw, 100); draw();
+  if (opts.start && !opts.demo) void session.start();
+  await done;
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) main().catch(e => { console.error(`Voice terminal: ${e.message}`); process.exitCode = 1; });
