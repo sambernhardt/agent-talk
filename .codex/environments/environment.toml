@@ -1,0 +1,11 @@
+version = 1
+name = "agent-talk"
+
+[setup]
+script = ""
+
+[[actions]]
+name = "Voice"
+icon = "run"
+command = "node bin/agent-talk.mjs"
+

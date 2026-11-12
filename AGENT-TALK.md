@@ -1,6 +1,6 @@
 # agent-talk
 
-Run `npx agent-talk` in an interactive macOS terminal. Choose Codex, type to filter your chats, and press Enter to start voice. Claude is coming soon.
+Run `npx agent-talk` in an interactive macOS terminal. On first launch, enter your AI Gateway token, then choose Codex, filter your chats, and press Enter to start voice. When a token is already saved or provided through the environment, startup skips the token prompt. Claude is coming soon.
 
 Requires Node.js 22+, macOS, Xcode Command Line Tools (`xcode-select --install`), and an authenticated Codex CLI that supports `codex queue`. The selected chat receives tasks you ask the voice companion to delegate. The terminal shows spoken exchanges, session cost, waveforms, and queued task labels.
 

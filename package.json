@@ -1,6 +1,6 @@
 {
   "name": "agent-talk",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "Interactive terminal voice companion for coding agents. Codex supported; Claude coming soon.",
   "type": "module",
   "bin": {
@@ -24,6 +24,7 @@
     "terminal/picker.mjs",
     "terminal/session.mjs",
     "terminal/ui.mjs",
+    "terminal/preferences.mjs",
     "terminal/orb.mjs",
     "relay/diagnostics.mjs",
     "relay/handoff.mjs",
@@ -32,13 +33,16 @@
     "relay/reply-watcher.mjs",
     "relay/server.mjs",
     "relay/session-context.mjs",
-    "relay/session-cost.mjs"
+    "relay/session-cost.mjs",
+    "terminal/screen.mjs",
+    "bin/install.mjs"
   ],
   "scripts": {
-    "test": "node --test terminal/*.test.mjs relay/*.test.mjs",
+    "test": "node --test bin/*.test.mjs terminal/*.test.mjs relay/*.test.mjs",
     "prepack": "node bin/check-package.mjs"
   },
   "dependencies": {
+    "smol-toml": "^1.9.1",
     "ws": "^8.22.2"
   },
   "repository": {

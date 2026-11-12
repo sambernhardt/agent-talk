@@ -4,9 +4,11 @@ import {fileURLToPath} from 'node:url';
 import {VoiceSession} from './session.mjs';
 import {NativeAudio, prepareAudio} from './audio.mjs';
 import {SessionCost} from '../relay/session-cost.mjs';
-import {Controls, render, controlsRow} from './ui.mjs';
+import {Controls, render, controlsRow, layout} from './ui.mjs';
 import {handoffWriter} from './handoff-file.mjs';
 import {pickChat} from './picker.mjs';
+import {createScreen} from './screen.mjs';
+import {loadPreferences, savePreferences} from './preferences.mjs';
 
 export function options(args) {
   const result = {relay:'http://127.0.0.1:4320', demo:false, frames:0};
@@ -61,9 +63,19 @@ export async function resolveThreadLabel(opts, fetchImpl = fetch) {
     return typeof name === 'string' && name.trim() ? name.trim() : 'Current chat';
   } catch { return 'Current chat'; }
 }
+export async function changeChat(session,{relay,list=listChats,pick=pickChat,demo=false}={}) {
+  const agent=await pick([{id:'codex',name:'Codex'},{id:'claude',name:'Claude · Coming soon'}],{title:'agent-talk · Change agent / chat'});
+  if(!agent)return false;
+  if(agent.id!=='codex'){session.notice='Claude support is coming soon · press H to choose a Codex chat';return false;}
+  const chats=demo?[{id:'preview',name:'Voice preview'},{id:'orb-preview',name:'Build voice orb animation'}]:await list(relay);
+  const chat=await pick(chats,{preferredId:session.thread});
+  if(!chat||chat.id===session.thread)return false;
+  session.stop();session.thread=chat.id;session.threadLabel=chat.name;session.messages=[];session.transcript='';session.handoff=null;session.cost=null;session.state='idle';session.notice='';
+  return true;
+}
 export async function main(args = process.argv.slice(2)) {
   const opts = options(args);
-  if (opts.help) { console.log(`agent-talk terminal\nUsage: node terminal/cli.mjs [--pick] [--start] [--thread ID] [--relay http://127.0.0.1:4320] [--label "Chat title"]\n       node terminal/cli.mjs --thread ID --demo [--frames N]\n\nWithout --thread, opens a filterable chat picker. --pick always opens the picker.\n--thread preselects a chat in the picker; --start begins voice after selection.\nShows the chat title from the relay; --label overrides the display name.\nStarts idle. S start, X stop, M mute/unmute, Q or Ctrl-C quit.\nMouse buttons work with SGR terminal mouse support.\nReal audio: macOS + Swift command line tools; existing concierge relay required.\nRelay credentials are read from its loopback HTML; no gateway key is read here.\n--demo never connects to a relay or opens audio. --frames prints finite fixture frames.\nUse headphones: native audio has no browser echo cancellation.`); return; }
+  if (opts.help) { console.log(`agent-talk terminal\nUsage: node terminal/cli.mjs [--pick] [--start] [--thread ID] [--relay http://127.0.0.1:4320] [--label "Chat title"]\n       node terminal/cli.mjs --thread ID --demo [--frames N]\n\nWithout --thread, opens a filterable chat picker. --pick always opens the picker.\n--thread preselects a chat in the picker; --start begins voice after selection.\nShows the chat title from the relay; --label overrides the display name.\nStarts idle. S start, X stop, M mute/unmute, H change chat, C config, Q quit.\nInside Config: T transcript, W waveforms, Esc close.\nMouse buttons work with SGR terminal mouse support.\nReal audio: macOS + Swift command line tools; existing concierge relay required.\nRelay credentials are read from its loopback HTML; no gateway key is read here.\n--demo never connects to a relay or opens audio. --frames prints finite fixture frames.\nUse headphones: native audio has no browser echo cancellation.`); return; }
   if (!opts.frames && (!process.stdin.isTTY || !process.stdout.isTTY)) throw new Error('Interactive UI needs a TTY. Run in an interactive terminal, or use --demo --frames 1.');
   if (opts.pick) {
     const chat = await pickChat(await listChats(opts.relay), {preferredId:opts.thread || process.env.CODEX_THREAD_ID});
@@ -84,35 +96,52 @@ export async function main(args = process.argv.slice(2)) {
       return new WebSocket(`${opts.relay.replace('http:', 'ws:')}/voice?token=${encodeURIComponent(token)}`, {origin:opts.relay, handshakeTimeout:10000});
     }});
   session.threadLabel = await resolveThreadLabel(opts);
-  const input = [], output = []; let tick = 0, quitting = false;
+  const settings=await loadPreferences();let configOpen=false,picking=false,preferenceWrite=Promise.resolve();
+  const screen = createScreen(process.stdout);
+  const input = [], output = []; let tick = 0, quitting = false, orbPhase = 0;
   const fixtureStart = () => { session.state = 'listening'; session.cost = new SessionCost('fixture', Date.now() - 65000); session.notice = 'Fixture waves · no microphone, speaker, relay, or billed calls'; };
   if (opts.demo) fixtureStart();
   const draw = () => {
+    if(picking||quitting)return;
     tick++;
     input.push(opts.demo && session.state === 'listening' && !session.muted ? Math.abs(Math.sin(tick * .42)) * .7 : session.input);
     output.push(opts.demo && session.state === 'listening' ? Math.abs(Math.cos(tick * .27)) * .6 : session.output);
     if (input.length > 80) { input.shift(); output.shift(); }
     session.input *= .6; session.output *= .6;
-    const frame = render(session, {columns:process.stdout.columns || 80, rows:process.stdout.rows || 24, demo:opts.demo, input, output});
-    process.stdout.write(opts.frames ? frame + '\n' : '\x1b[H\x1b[2J' + frame);
+    orbPhase += session.handoff?.status === 'working' || session.state === 'starting' ? .23 : (output.at(-1) || 0) > .025 ? .11 : .05;
+    const frame = render(session, {columns:process.stdout.columns || 80, rows:process.stdout.rows || 24, demo:opts.demo, input, output, time:tick/10, phase:orbPhase, ...settings, configOpen, color:Boolean(process.stdout.isTTY) && !opts.frames && !('NO_COLOR' in process.env)});
+    if (opts.frames) process.stdout.write(frame + '\n');
+    else screen.draw(frame, process.stdout.columns || 80);
   };
   if (opts.frames) { for (let i = 0; i < opts.frames; i++) draw(); return; }
   const wasRaw = process.stdin.isRaw;
   let timer;
   const restore = () => {
     clearInterval(timer); process.stdin.off('data', onData); process.stdin.setRawMode(Boolean(wasRaw)); process.stdin.pause();
-    process.stdout.write('\x1b[?1000l\x1b[?1006l\x1b[?25h\x1b[?1049l');
+    process.stdout.write('\x1b[?2026l\x1b[?1000l\x1b[?1006l\x1b[?25h\x1b[?1049l');
   };
   let resolveDone;
   const done = new Promise(resolve => { resolveDone = resolve; });
   const quit = () => { if (quitting) return; quitting = true; session.stop(); restore(); process.off('SIGINT', quit); process.off('SIGTERM', quit); process.off('exit', restore); resolveDone(); };
+  const chooseChat = async()=>{
+    if(picking)return;picking=true;configOpen=false;process.stdin.off('data',onData);
+    // pickChat owns terminal input while open. Resume our alternate screen after it exits.
+    process.stdout.write('\x1b[?1000l\x1b[?1006l');
+    try{const changed=await changeChat(session,{relay:opts.relay,demo:opts.demo});if(changed){input.length=0;output.length=0;}}
+    catch(error){session.notice=`Could not change chat: ${error.message}`;}
+    finally{picking=false;if(!quitting){process.stdout.write('\x1b[?1049h\x1b[?25l\x1b[?1000h\x1b[?1006h');process.stdin.setRawMode(true);process.stdin.resume();process.stdin.on('data',onData);screen.invalidate();draw();}}
+  };
   const controls = new Controls(key => {
     if (key === 'q') quit();
+    else if(key==='h'){void chooseChat();return;}
+    else if(key==='c')configOpen=!configOpen;
+    else if(key==='escape')configOpen=false;
+    else if(configOpen&&(key==='t'||key==='w')){const setting=key==='t'?'showTranscript':'showWaveforms';settings[setting]=!settings[setting];const snapshot={...settings};preferenceWrite=preferenceWrite.then(()=>savePreferences(snapshot)).catch(()=>{session.notice='Could not save display preferences';});}
     else if (key === 'x') session.stop();
     else if (key === 'm') session.mute();
     else if (key === 's') { if (opts.demo) fixtureStart(); else void session.start(); }
     if (!quitting) draw();
-  },()=>controlsRow(process.stdout.rows||24));
+  },()=>controlsRow(process.stdout.rows||24),()=>layout(session,{columns:process.stdout.columns||80,rows:process.stdout.rows||24,configOpen}).hits);
   const onData = chunk => controls.feed(chunk.toString());
   process.on('SIGINT', quit); process.on('SIGTERM', quit); process.once('exit', restore);
   process.stdin.setRawMode(true); process.stdin.resume(); process.stdin.on('data', onData);

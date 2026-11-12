@@ -47,7 +47,7 @@ export class VoiceSession {
     } catch (e) { if (generation === this.generation) this.fail(e); }
   }
   receive(e) {
-    if (e.type === 'listening') { clearTimeout(this.startTimer); this.cost ??= new SessionCost(String(this.now()), this.now()); this.state = 'listening'; this.notice = 'Listening · headphones recommended'; }
+    if (e.type === 'listening') { clearTimeout(this.startTimer); this.cost ??= new SessionCost(String(this.now()), this.now()); this.state = 'listening'; this.notice = ''; }
     else if (e.type === 'session-usage') this.cost?.usage(e.seconds, this.now());
     else if (e.type === 'audio') { const pcm = Buffer.from(e.audio, 'base64'); this.output = level(pcm); this.audio?.play(pcm); }
     else if (e.type === 'interrupt-audio') { this.audio?.interrupt(); this.output = 0; }

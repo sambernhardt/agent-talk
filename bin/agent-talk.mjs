@@ -5,6 +5,7 @@ import {homedir} from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
 import {fileURLToPath} from 'node:url';
+import {installProjects} from './install.mjs';
 import {pickChat} from '../terminal/picker.mjs';
 import {main as terminal} from '../terminal/cli.mjs';
 
@@ -13,8 +14,15 @@ const configFile = path.join(configDir, 'config.json');
 function promptToken() {
   return new Promise(resolve => {
     let value=''; const wasRaw=process.stdin.isRaw;
-    process.stdout.write('Paste your AI Gateway token (hidden; stored locally with owner-only permissions): ');
-    const finish = result => { process.stdin.off('data',data); process.stdin.setRawMode(Boolean(wasRaw)); process.stdin.pause(); process.stdout.write('\n'); resolve(result); };
+    process.stdout.write('\x1b[?1049h\x1b[H\x1b[2J' + [
+      'agent-talk · Connect AI Gateway',
+      'Paste your token · Enter continue · Esc cancel',
+      '',
+      'Your token stays hidden and is saved locally for future sessions.',
+      '',
+      'AI Gateway token: ',
+    ].join('\n'));
+    const finish = result => { process.stdin.off('data',data); process.stdin.setRawMode(Boolean(wasRaw)); process.stdin.pause(); process.stdout.write('\x1b[?1049l'); resolve(result); };
     const data = chunk => {
       for (const char of chunk.toString()) {
         if (char === '\x03' || char === '\x1b') return finish(null);
@@ -50,23 +58,27 @@ async function freePort() {
 async function run() {
   const args=process.argv.slice(2);
   if(args.includes('--help') || args.includes('-h')) {
-    console.log('agent-talk\nUsage: agent-talk [setup | --demo | --help]\n\nChoose an agent, filter your chats, and press Enter to start voice.\nCodex supported; Claude coming soon.\nRequires macOS, Swift command line tools, Codex CLI with queue support,\nand an AI Gateway token. S start, X stop, M mute, Q quit.\nsetup replaces the saved token; AI_GATEWAY_API_KEY overrides saved credentials.');return;
+    console.log('agent-talk\nUsage: agent-talk [setup | --demo | --help]\n       agent-talk install-codex-voice-action [PROJECT_DIR ...]\n\nChoose an agent, filter your chats, and press Enter to start voice.\nCodex supported; Claude coming soon.\nRequires macOS, Swift command line tools, Codex CLI with queue support,\nand an AI Gateway token. S start, X stop, M mute, Q quit.\ninstall-codex-voice-action adds a Codex Voice toolbar action to each project (default: current directory).\nsetup replaces the saved token; AI_GATEWAY_API_KEY overrides saved credentials.');return;
+  }
+  if(args[0]==='install-codex-voice-action') {
+    if(args.slice(1).some(arg=>arg.startsWith('-'))) throw Error('Usage: agent-talk install-codex-voice-action [PROJECT_DIR ...]');
+    process.exitCode=await installProjects(args.slice(1));return;
   }
   if(args.length>1 || (args.length && !['setup','--demo'].includes(args[0]))) throw Error('Unknown argument. Run agent-talk --help.');
   if(!process.stdin.isTTY || !process.stdout.isTTY) throw Error('Run agent-talk in an interactive terminal.');
   if(args[0]==='--demo') return terminal(['--demo']);
   if(args[0]==='setup') { if(await credentials(true)) console.log('AI Gateway token saved. Run agent-talk to begin.'); return; }
+  if(process.platform!=='darwin') throw Error('agent-talk currently requires macOS.');
+  const key=await credentials(); if(!key) return;
   let agent;
   do {
     agent=await pickChat([{id:'codex',name:'Codex'},{id:'claude',name:'Claude · Coming soon'}],{title:'agent-talk · Choose your agent'});
     if(!agent) return;
     if(agent.id==='claude') { console.log('Claude support is coming soon. Choose Codex to start voice.'); }
   } while(agent.id!=='codex');
-  if(process.platform!=='darwin') throw Error('agent-talk currently requires macOS.');
   const codex=process.env.CODEX_BIN || 'codex';
   const check=spawnSync(codex,['queue','--help'],{encoding:'utf8'});
   if(check.error || check.status!==0) throw Error('Install/sign in to Codex CLI with `codex queue` support first.');
-  const key=await credentials(); if(!key) return;
   await mkdir(configDir,{recursive:true,mode:0o700});
   const port=await freePort(); const origin=`http://127.0.0.1:${port}`;
   console.log('Starting local voice relay…');

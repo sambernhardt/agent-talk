@@ -78,7 +78,7 @@ test('CLI validates binding, remote relay, and fixture options', () => {
 });
 
 test('short terminal panels keep the session error visible', () => {
-  const frame = render({thread:'t',state:'error',notice:'Audio output is falling behind; session stopped.'},{rows:12,columns:100});
+  const frame = render({thread:'t',state:'error',notice:'Audio output is falling behind; session stopped.'},{rows:12,columns:100,showTranscript:true});
   assert.match(frame,/Audio output is falling behind/);
 });
 
@@ -96,7 +96,7 @@ test('spoken exchanges stream into distinct transcript messages without overwrit
   {label:'You',text:'Can you explain this?'},{label:'Voice',text:'Yes, here is how.'},{label:'You',text:'Thanks.'}
  ]);
  assert.equal(session.messages[0].id,userId);assert.equal(updates,5);
- const frame=render(session,{rows:24,columns:100});
+ const frame=render(session,{rows:24,columns:100,showTranscript:true});
  assert.match(frame,/You: Can you explain this\?/);assert.match(frame,/Voice: Yes, here is how\./);assert.match(frame,/You: Thanks\./);
 });
 test('Codex final responses replace streamed text in the transcript',()=>{
@@ -110,9 +110,9 @@ test('short panels show the transcript and preserve mouse controls in compact la
  const session=new VoiceSession({thread:'t'});
  session.receive({type:'user-transcript',delta:'Hello'});
  session.receive({type:'voice-transcript',delta:'Hi there'});
- const frame=render(session,{rows:12,columns:100});
+ const frame=render(session,{rows:12,columns:100,showTranscript:true});
  assert.match(frame,/You: Hello/);assert.match(frame,/Voice: Hi there/);
- assert.equal(frame.split('\n')[7],'  [S Start]   [X Stop]   [M Mute]   [Q Quit]');
+ assert.equal(frame.split('\n')[10],'  [S Start]   [X Stop]   [M Mute]   [Q Quit]');
  const actions=[];const controls=new Controls(key=>actions.push(key),()=>8);
  controls.feed('\x1b[<0;4;8M');assert.deepEqual(actions,['s']);
 });
