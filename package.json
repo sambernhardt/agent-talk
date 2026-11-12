@@ -1,10 +1,10 @@
 {
-  "name": "voice-mode",
+  "name": "agent-talk",
   "version": "0.1.0",
   "description": "Interactive terminal voice companion for coding agents. Codex supported; Claude coming soon.",
   "type": "module",
   "bin": {
-    "voice-mode": "bin/voice-mode.mjs"
+    "agent-talk": "bin/voice-mode.mjs"
   },
   "engines": {
     "node": ">=22"

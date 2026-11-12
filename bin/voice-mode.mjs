@@ -46,12 +46,12 @@ async function freePort() {
 async function run() {
   const args=process.argv.slice(2);
   if(args.includes('--help') || args.includes('-h')) {
-    console.log('Voice Mode\nUsage: voice-mode [setup | --demo | --help]\n\nChoose an agent, filter your chats, and press Enter to start voice.\nCodex supported; Claude coming soon.\nRequires macOS, Swift command line tools, Codex CLI with queue support,\nand an AI Gateway token. S start, X stop, M mute, Q quit.\nsetup replaces the saved token; AI_GATEWAY_API_KEY overrides saved credentials.');return;
+    console.log('Voice Mode\nUsage: agent-talk [setup | --demo | --help]\n\nChoose an agent, filter your chats, and press Enter to start voice.\nCodex supported; Claude coming soon.\nRequires macOS, Swift command line tools, Codex CLI with queue support,\nand an AI Gateway token. S start, X stop, M mute, Q quit.\nsetup replaces the saved token; AI_GATEWAY_API_KEY overrides saved credentials.');return;
   }
-  if(args.length>1 || (args.length && !['setup','--demo'].includes(args[0]))) throw Error('Unknown argument. Run voice-mode --help.');
-  if(!process.stdin.isTTY || !process.stdout.isTTY) throw Error('Run voice-mode in an interactive terminal.');
+  if(args.length>1 || (args.length && !['setup','--demo'].includes(args[0]))) throw Error('Unknown argument. Run agent-talk --help.');
+  if(!process.stdin.isTTY || !process.stdout.isTTY) throw Error('Run agent-talk in an interactive terminal.');
   if(args[0]==='--demo') return terminal(['--demo']);
-  if(args[0]==='setup') { if(await credentials(true)) console.log('AI Gateway token saved. Run voice-mode to begin.'); return; }
+  if(args[0]==='setup') { if(await credentials(true)) console.log('AI Gateway token saved. Run agent-talk to begin.'); return; }
   let agent;
   do {
     agent=await pickChat([{id:'codex',name:'Codex'},{id:'claude',name:'Claude · Coming soon'}],{title:'Voice Mode · Choose your agent'});
