@@ -73,8 +73,8 @@ export async function main(args = process.argv.slice(2)) {
   let WebSocket;
   if (!opts.demo) {
     await prepareAudio();
-    const require = createRequire(new URL('../relay/package.json', import.meta.url));
-    try { WebSocket = require('ws'); } catch { throw new Error('Missing relay dependency ws. Install dependencies in relay.'); }
+    const require = createRequire(new URL('../package.json', import.meta.url));
+    try { WebSocket = require('ws'); } catch { throw new Error('Missing relay dependency ws. Run npm install in the repository root.'); }
   }
   const session = new VoiceSession({thread:opts.thread,
     saveHandoff:handoffWriter(),

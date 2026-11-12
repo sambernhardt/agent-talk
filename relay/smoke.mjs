@@ -32,7 +32,7 @@ let ws, feed, timeout;
 try {
  await new Promise((resolve,reject)=>{server.stdout.once('data',resolve);server.once('error',reject)});
  const base=`http://127.0.0.1:${port}`;
- const html=await(await fetch(base)).text();const token=html.match(/const token='([^']+)'/)[1];
+ const html=await(await fetch(base)).text();const token=html.match(/<meta\s+name="voice-token"\s+content="([^"]+)"/)[1];
  ws=new WebSocket(`ws://127.0.0.1:${port}/voice?token=${token}`,{origin:base});
  let queued=0,completed=false,progress=false,ack=false,spoken='',audioAfterResult=0,resultAt=0;
  await new Promise((resolve,reject)=>{

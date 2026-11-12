@@ -17,8 +17,7 @@
     "bin/check-package.mjs",
     "AGENT-TALK.md",
     "terminal/audio.swift",
-    "relay/package.json",
-    "relay/frontend/transcript-store.mjs",
+    "relay/transcript-store.mjs",
     "terminal/audio.mjs",
     "terminal/cli.mjs",
     "terminal/handoff-file.mjs",
@@ -36,7 +35,7 @@
     "relay/session-cost.mjs"
   ],
   "scripts": {
-    "test": "node --test terminal/*.test.mjs",
+    "test": "node --test terminal/*.test.mjs relay/*.test.mjs",
     "prepack": "node bin/check-package.mjs"
   },
   "dependencies": {

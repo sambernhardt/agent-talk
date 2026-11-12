@@ -6,14 +6,11 @@ import { Conversation, prepareHandoff, formatHandoff } from './handoff.mjs';
 import { ReplyWatcher } from './reply-watcher.mjs';
 import { findReply } from './replies.mjs';
 import http from 'node:http';
-import { readFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import readline from 'node:readline';
 import { randomBytes, randomUUID } from 'node:crypto';
 import WebSocket, { WebSocketServer } from 'ws';
 
-const development = process.argv.includes('--dev');
-let vite;
 const port = Number(process.env.PORT || 4320);
 const origin = `http://127.0.0.1:${port}`;
 const token = randomBytes(24).toString('hex');
@@ -67,20 +64,10 @@ const server = http.createServer(async (req, res) => {
   const headers = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
   try {
     if (url.pathname === '/') {
-      let html = process.env.VOICE_MODE_TERMINAL_ONLY === '1' ? '<!doctype html><meta name="voice-token" content="__TOKEN__"><title>agent-talk</title>' : await readFile(new URL(development ? './index.html' : './dist/index.html', import.meta.url), 'utf8');
-      if (vite) html = await vite.transformIndexHtml(url.pathname, html);
+      let html = '<!doctype html><meta name="voice-token" content="__TOKEN__"><title>agent-talk</title>';
       html = html.replace('__TOKEN__', token);
       res.writeHead(200, { ...headers, 'Content-Type': 'text/html', 'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://127.0.0.1:" + port + "; worker-src 'self' blob:; media-src 'self' blob:; frame-ancestors 'none'" }).end(html); return;
     }
-    if (!development && /^\/assets\/[a-zA-Z0-9_.-]+$/.test(url.pathname)) {
-      const type = url.pathname.endsWith('.css') ? 'text/css' : url.pathname.endsWith('.js') ? 'text/javascript' : 'application/octet-stream';
-      res.writeHead(200, { ...headers, 'Content-Type': type }).end(await readFile(new URL('./dist' + url.pathname, import.meta.url))); return;
-    }
-    if (vite && !url.pathname.startsWith('/api/') && url.pathname !== '/audio-worklet.js' && url.pathname !== '/session-cost.mjs') {
-      vite.middlewares(req, res, () => res.writeHead(404).end()); return;
-    }
-    if (url.pathname === '/session-cost.mjs') { res.writeHead(200, { ...headers, 'Content-Type': 'text/javascript' }).end(await readFile(new URL('./session-cost.mjs', import.meta.url))); return; }
-    if (url.pathname === '/audio-worklet.js') { res.writeHead(200, { ...headers, 'Content-Type': 'text/javascript' }).end(await readFile(new URL('./audio-worklet.js', import.meta.url))); return; }
     if (req.headers.authorization !== `Bearer ${token}`) { res.writeHead(403).end(); return; }
     if (url.pathname === '/api/diagnostics') {
       res.writeHead(200, { ...headers, 'Content-Type': 'application/json' }).end(JSON.stringify({ events: await diagnostics.read(url.searchParams.get('threadId')), persistenceError:diagnostics.writeFailed, activeSessions:[...clients].map(c=>sessionContext(c)).filter(Boolean) })); return;
@@ -99,7 +86,6 @@ const server = http.createServer(async (req, res) => {
 const wss = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024 });
 server.on('upgrade', (req, socket, head) => {
   const u = new URL(req.url, origin);
-  if (development && u.pathname === '/vite-hmr') return;
   if (req.headers.origin !== origin || u.pathname !== '/voice' || u.searchParams.get('token') !== token) { socket.destroy(); return; }
   wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req));
 });
@@ -283,10 +269,6 @@ wss.on('connection', ws => {
   ws.on('close', () => { c.stop(); clients.delete(c); });
   ws.on('error', () => c.stop());
 });
-if (development) {
-  const {createServer} = await import('vite');
-  vite = await createServer({server:{middlewareMode:true,ws:{server,path:'/vite-hmr'}},appType:'custom'});
-}
 server.listen(port, '127.0.0.1', () => console.log(`agent-talk relay: ${origin}`));
-function shutdown() { for (const c of clients) c.stop(); setTimeout(async () => { await diagnostics.chain; await vite?.close(); codex.kill(); server.close(); process.exit(); }, 5500).unref(); }
+function shutdown() { for (const c of clients) c.stop(); setTimeout(async () => { await diagnostics.chain; codex.kill(); server.close(); process.exit(); }, 5500).unref(); }
 process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);

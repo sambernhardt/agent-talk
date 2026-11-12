@@ -1,1 +1,0 @@
-{"name":"codex-voice-terminal","private":true,"type":"module","scripts":{"start":"node cli.mjs","demo":"node cli.mjs --thread fixture --demo","test":"node --test *.test.mjs"}}

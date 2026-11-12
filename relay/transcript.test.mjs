@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {reduceTranscript} from './frontend/transcript-store.mjs';
+import {reduceTranscript} from './transcript-store.mjs';
 test('streamed chunks keep the same message identity; final Codex text replaces partial text',()=>{
  let messages=reduceTranscript([],'Codex','Hello',{id:'1'});
  messages=reduceTranscript(messages,'Codex',' world',{id:'2'});

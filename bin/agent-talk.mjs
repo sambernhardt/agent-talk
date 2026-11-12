@@ -71,7 +71,7 @@ async function run() {
   const port=await freePort(); const origin=`http://127.0.0.1:${port}`;
   console.log('Starting local voice relay…');
   const relay=spawn(process.execPath,[fileURLToPath(new URL('../relay/server.mjs',import.meta.url))],{
-    env:{...process.env,PORT:String(port),AI_GATEWAY_API_KEY:key,VOICE_MODE_TERMINAL_ONLY:'1',CODEX_VOICE_DIAGNOSTICS_PATH:path.join(configDir,'diagnostics.jsonl')},stdio:['ignore','pipe','pipe']});
+    env:{...process.env,PORT:String(port),AI_GATEWAY_API_KEY:key,CODEX_VOICE_DIAGNOSTICS_PATH:path.join(configDir,'diagnostics.jsonl')},stdio:['ignore','pipe','pipe']});
   let exited=false, failure=null;
   relay.once('error',error=>{failure=error;});relay.once('exit',()=>{exited=true;});
   // Never forward provider output or credentials into the terminal.
