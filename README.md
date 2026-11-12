@@ -1,6 +1,33 @@
 # Talk to Codex
 
-Two local voice experiments that work with existing Codex desktop chats.
+A terminal voice companion for existing Codex chats. The terminal client is the active development direction; the browser prototypes remain as references and supply the shared conversational relay.
+
+## Terminal voice
+
+Requires macOS, Node 24+, Swift command line tools, Codex CLI with `codex queue`, and `AI_GATEWAY_API_KEY` in the relay environment.
+
+Start the relay in one terminal:
+
+```sh
+npm --prefix codex-voice-concierge-prototype ci
+npm --prefix codex-voice-concierge-prototype start
+```
+
+Then start the client in another terminal (or Codex's terminal panel):
+
+```sh
+node terminal-prototype/cli.mjs --thread YOUR_CHAT_ID
+```
+
+**S** starts voice, **X** stops, **M** mutes, and **Q** quits. See [terminal setup and controls](terminal-prototype/README.md). The repo-local `codex-voice-terminal` skill prepares a command bound to the current chat.
+
+For an offline preview without microphone or Gateway usage:
+
+```sh
+node terminal-prototype/cli.mjs --thread preview --demo
+```
+
+## Browser references
 
 | Approach | Folder | Local URL |
 | --- | --- | --- |
@@ -24,7 +51,7 @@ See [PLAN.md](PLAN.md) for the development plan and [exploration notes](codex-vo
 From the repository root:
 
 ```sh
-node --test codex-voice-prototype/*.test.mjs codex-voice-concierge-prototype/*.test.mjs
+node --test terminal-prototype/*.test.mjs codex-voice-prototype/*.test.mjs codex-voice-concierge-prototype/*.test.mjs
 node --check codex-voice-prototype/server.mjs
 node --check codex-voice-concierge-prototype/server.mjs
 ```
@@ -33,38 +60,7 @@ Gateway smoke checks are described in each approach's README. They consume Gatew
 
 This repository was extracted from Flow state's tools directory. No remote repository is configured. Local dependencies and diagnostic recordings/logs are excluded from commits.
 
-## Desktop UI lab
 
-[desktop-prototype](desktop-prototype/README.md) adds an Electron menu bar app with three
-experimental presentations: a transcript panel, a floating voice capsule, and a bottom bar
-that follows the Codex window using a small native macOS helper. It reuses the conversational
-relay and keeps the two browser implementations available.
+## Previous desktop experiments
 
-```sh
-cd desktop-prototype
-npm ci
-npx install-electron
-npm start
-```
-
-## Voice launch skills and terminal UI
-
-Repository skills live in `.agents/skills`:
-
-- `codex-voice` opens the Mac chin and starts or stops voice bound to the originating Codex thread.
-- `codex-voice-terminal` opens Codex's built-in terminal panel and prepares the voice command. Automatic launch requires an app terminal execution tool; with the current open/read tools, you run the prepared command in that panel.
-
-The terminal interface shares the conversational relay and cost calculation. It has separate
-microphone/speaker waveforms, elapsed time, estimated voice cost, keyboard controls, and mouse
-buttons in terminals supporting SGR mouse reporting. Real audio uses a small macOS Swift helper.
-See [terminal setup and controls](terminal-prototype/README.md).
-
-For a preview with no microphone, relay connection, or Gateway usage:
-
-```sh
-node terminal-prototype/cli.mjs --thread preview --demo
-```
-
-Both interfaces bind an explicit thread ID. Start only one voice interface at a time;
-stopping voice leaves delegated Codex work running. These launch additions do not insert
-voice transcripts into Codex history or add a startup summarization call.
+The Electron menu panel, floating capsule, attached chin, and voice orb were retired on `codex/terminal-only`. Their source is preserved in checkpoint commit `5c96c9f` on `main`.

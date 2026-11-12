@@ -19,13 +19,6 @@ function ChatPicker() {
     return ()=>{observer.disconnect();select.removeEventListener('change',update);};
   },[]);
   React.useEffect(()=>{if(selection.disabled)setOpen(false);},[selection.disabled]);
-  React.useEffect(()=>window.voiceDesktop?.onClosePopover(()=>setOpen(false)),[]);
-  React.useEffect(()=>{
-    const desktop=window.voiceDesktop;if(!desktop)return;
-    document.documentElement.dataset.pickerOpen=String(open);
-    void desktop.popover(open);
-    return()=>{document.documentElement.dataset.pickerOpen='false';void desktop.popover(false);};
-  },[open]);
   const chosen=selection.chats.find(chat=>chat.id===selection.value);
   return <Popover open={open} onOpenChange={setOpen}>
     <PopoverTrigger asChild>
@@ -34,7 +27,7 @@ function ChatPicker() {
         <span>{chosen?.name || 'Select a chat…'}</span><ChevronsUpDown aria-hidden="true" size={14}/>
       </button>
     </PopoverTrigger>
-    <PopoverContent className="chat-combobox-popover" align="start" side={window.voiceDesktop?"top":"bottom"} sideOffset={10}>
+    <PopoverContent className="chat-combobox-popover" align="start" side="bottom" sideOffset={10}>
       <Command label="Choose a Codex chat">
         <CommandInput placeholder="Search chats…" aria-label="Search chats"/>
         <CommandList aria-label="Codex chats">

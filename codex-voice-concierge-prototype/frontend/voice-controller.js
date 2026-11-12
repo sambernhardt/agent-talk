@@ -7,8 +7,7 @@ let selectedView='transcript';
 function setView(view){selectedView=view;document.body.dataset.view=view;$('transcript-panel').hidden=view!=='transcript';$('session-history').hidden=view!=='history';$('history-tab').setAttribute('aria-expanded',String(view==='history'));$('history-tab').textContent=view==='history'?'Back to transcript':'History';}
 $('history-tab').onclick=()=>setView(selectedView==='history'?'transcript':'history');
 let canStart=false,toggleMode='idle',startGeneration=0;
-function reportDesktop(extra={}){window.voiceDesktop?.update({active:toggleMode==='active',phase:toggleMode,threadId:$('threads').value||null,...extra});}
-function setToggle(mode){toggleMode=mode;const button=$('toggle');const running=mode==='active';$('waveform').dataset.active=String(running);button.disabled=mode==='starting'||mode==='stopping'||(mode==='idle'&&!canStart);button.setAttribute('aria-label',running?'End voice mode':'Enter voice mode');button.setAttribute('aria-pressed',String(running));button.dataset.tooltip=running?'Stop':'Play';reportDesktop();}
+function setToggle(mode){toggleMode=mode;const button=$('toggle');const running=mode==='active';$('waveform').dataset.active=String(running);button.disabled=mode==='starting'||mode==='stopping'||(mode==='idle'&&!canStart);button.setAttribute('aria-label',running?'End voice mode':'Enter voice mode');button.setAttribute('aria-pressed',String(running));button.dataset.tooltip=running?'Stop':'Play';}
 function renderBar(seconds,cost){const time=seconds<60?`${Math.floor(seconds)}s`:duration(seconds);$('session-time').textContent=time;$('session-price').textContent=`$${cost.toFixed(2)}`;$('session-meter').dataset.tooltip=`${duration(seconds)} elapsed · estimated voice cost $${cost.toFixed(4)}`;}
 let sessionCost=null,meterTimer,toastTimer;
 let sessionHistory=[];
@@ -27,7 +26,7 @@ resetWaveform();
 function animateWaveform(now){waveFrame=requestAnimationFrame(animateWaveform);if(now-lastWaveAt<50)return;lastWaveAt=now;waveInput?.getByteTimeDomainData(inputWave);waveOutput?.getByteTimeDomainData(outputWave);for(let i=0;i<waveBars.length;i++){let peak=0;for(let j=Math.floor(i*512/waveBars.length);j<Math.floor((i+1)*512/waveBars.length);j++)peak=Math.max(peak,Math.abs(inputWave[j]-128),Math.abs(outputWave[j]-128));waveBars[i].style.height=`${3+Math.min(11,peak*.25)}px`;}}
 let restartForChatChange=false;
 let ws,ctx,stream,capture,source,mute,nextTime=0,sources=new Set(),lastUser=0,active=false;
-function status(text,error=false){$('status').textContent=text;$('status').className=error?'error':'';reportDesktop({error:error?text:null});}
+function status(text,error=false){$('status').textContent=text;$('status').className=error?'error':'';}
 function log(role,text,options){appendTranscript(role,text,options);}
 async function refresh(){try{const r=await fetch('/api/threads',{headers:{Authorization:`Bearer ${token}`}});const data=await r.json();if(!r.ok)throw Error(data.error);const selected=localStorage.getItem('codexConciergeChat')||$('threads').value;$('threads').replaceChildren(...data.threads.map(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.name.slice(0,110);return o;}));if(data.threads.some(t=>t.id===selected))$('threads').value=selected;canStart=data.gateway&&Boolean(data.threads.length);$('threads').disabled=!canStart;setToggle('idle');status(data.gateway?'Ready to talk':'Gateway key missing from server environment');}catch(e){status(e.message,true);}}
 function clearAudio(){for(const s of sources){try{s.stop();}catch{}}sources.clear();nextTime=ctx?.currentTime||0;}
@@ -72,29 +71,4 @@ const work=new Map();
 $('threads').onchange=()=>{localStorage.setItem('codexConciergeChat',$('threads').value);if(active){restartForChatChange=true;end();$('threads').disabled=true;status('Switching voice to selected chat…');}};
 $('toggle').onclick=()=>{if(toggleMode==='active')end();else if(toggleMode==='idle')start();};
 function end(update=true){startGeneration++;setToggle('stopping');if(update)status('Voice session ended');if(ws?.readyState===WebSocket.OPEN)ws.send(JSON.stringify({type:'stop'}));else ws?.close();cleanup();}
-let commandChain=Promise.resolve(),commandGeneration=0;
-window.voiceDesktop?.onCommand(command=>{
- if(command.action==='stop'){commandGeneration++;restartForChatChange=false;end();return;}
- const generation=commandGeneration;
- commandChain=commandChain.catch(()=>{}).then(async()=>{
-  if(generation!==commandGeneration)return;
-  if(command.action==='stop'){end();return;}
-  if(!['start','show'].includes(command.action)||!command.threadId)return;
-  try{
-   if(toggleMode!=='idle'){
-    if($('threads').value===command.threadId)return;
-    throw Error('End the current voice session before switching its Codex thread.');
-   }
-   await refresh();
-   if(generation!==commandGeneration)return;
-   const option=[...$('threads').options].find(option=>option.value===command.threadId);
-   if(!option)throw Error('The requested Codex thread is unavailable. No microphone was opened.');
-   if(command.action==='start'&&!canStart)throw Error('Voice is unavailable. Check the Gateway key and Codex connection.');
-   $('threads').value=command.threadId;
-   $('threads').dispatchEvent(new Event('change',{bubbles:true}));
-   reportDesktop();
-   if(command.action==='start')await start();
-  }catch(error){status(error.message,true);}
- });
-});
 window.addEventListener('pagehide',()=>{finishMeter();stream?.getTracks().forEach(t=>t.stop());ws?.close();});refresh();

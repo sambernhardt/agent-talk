@@ -24,9 +24,11 @@ Separate local microphone activity from the billable Gateway voice connection. E
 
 On resume, provide a compact summary, pending task state, and new results. Preserve clear microphone/connection indicators and an explicit stop control. Treat recording retention as a separate choice; local listening does not require saving continuous audio.
 
-## Explore: desktop interface
+## Active direction: terminal voice
 
-Compare a native macOS app, an Electron overlay, and a Raycast entry point. Keep the Codex bridge independent of the interface so experiments can share the same task/history behavior. Preserve both baseline implementations while comparing interaction quality and latency.
+Use `terminal-prototype` as the primary interface, sharing the conversational relay and existing Codex handoff behavior. Focus on terminal audio, transcript streaming, session cost, keyboard controls, and reliable task delivery. Preserve the two browser references.
+
+Retire the Electron app, menu panel, capsule, attached chin, and standalone orb from this branch. The full desktop experiments are preserved in checkpoint commit `5c96c9f` on `main`.
 
 ## Explore: waiting experience
 
