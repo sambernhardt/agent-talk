@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cloud study — voice orb</title>
+<style>
+:root{color-scheme:light;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#454545;background:#fafafa}*{box-sizing:border-box}body{margin:0;min-height:100svh;display:grid;place-items:center}main{width:min(960px,100%);padding:36px 32px 28px}header{display:flex;align-items:center;justify-content:space-between}h1{font-size:15px;font-weight:550;letter-spacing:-.3px;margin:0}.eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#92948c}.stage{position:relative;height:min(58vh,490px);min-height:300px;display:grid;place-items:center}#orb{width:100%;height:100%;position:absolute;inset:0}.caption{position:absolute;bottom:0;text-align:center;pointer-events:none}.caption strong{font-size:13px;font-weight:500}.caption p{font-size:12px;color:#96988f;margin:8px 0}section{width:min(540px,100%);margin:30px auto 0}.modes{display:flex;gap:5px;background:#eeeeee;border-radius:13px;padding:5px}button{font:inherit;cursor:pointer;border:0}.mode{flex:1;padding:12px 10px;border-radius:9px;background:transparent;color:#888888;font-size:12px;transition:background .25s,color .25s,box-shadow .25s}.mode[aria-pressed=true]{background:#ffffff;color:#494949;box-shadow:0 1px 5px #30303010}.mode span{display:inline-block;width:5px;height:5px;border-radius:50%;background:currentColor;margin-right:8px;vertical-align:2px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:26px}.control label{display:flex;justify-content:space-between;font-size:11px;color:#757575;margin-bottom:12px}.control output{font-variant-numeric:tabular-nums;color:#999999}input[type=range]{width:100%;height:3px;accent-color:#888888;cursor:pointer;display:block;margin:0}footer{margin-top:30px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:10px;color:#a1a397}.toggle{display:flex;align-items:center;gap:8px;cursor:pointer}.toggle input{accent-color:#828e7a}.hint{margin:20px 0 0;text-align:center;font-size:10px;color:#a9aba2}kbd{font:inherit;border:1px solid #dddfd5;padding:1px 4px;border-radius:3px}#wave{width:72px;height:24px}button:focus-visible,input:focus-visible{outline:2px solid #888888;outline-offset:4px}@media(max-width:540px){main{padding:24px}.stage{height:48vh}.eyebrow{font-size:9px}.controls{gap:20px}}
+</style>
+</head>
+<body><main>
+
+<div class="stage"><canvas id="orb" aria-label="Animated pastel cloud voice orb"></canvas></div>
+<section aria-label="Animation controls">
+<div class="modes" role="group" aria-label="Voice state"><button class="mode" data-state="idle" aria-pressed="true"><span></span>Idle</button><button class="mode" data-state="thinking" aria-pressed="false"><span></span>Thinking</button><button class="mode" data-state="talking" aria-pressed="false"><span></span>Talking</button></div>
+<div class="controls"><div class="control"><label for="scale">Orb size <output id="scaleValue">100%</output></label><input id="scale" type="range" min="60" max="135" value="100"></div><div class="control"><label for="energy">Waveform intensity <output id="energyValue">65%</output></label><input id="energy" type="range" min="0" max="100" value="65"></div></div>
+</section></main>
+<script>
+'use strict';
+const canvas=document.getElementById('orb'),gl=canvas.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:false});
+const vertex=`attribute vec2 position;void main(){gl_Position=vec4(position,0.,1.);}`;
+const fragment=`precision highp float;
+uniform vec2 resolution;uniform float time,size,thinking,talking,amplitude;
+float hash(vec3 p){p=fract(p*.3183099+vec3(.1,.2,.3));p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
+float fbm(vec3 p){float v=0.;float a=.53;for(int i=0;i<5;i++){v+=a*noise(p);p=p*2.03+vec3(4.1,1.7,2.4);a*=.49;}return v;}
+void main(){vec2 uv=(gl_FragCoord.xy-.5*resolution)/min(resolution.x,resolution.y);uv.y-=.025;
+float radius=.282*size*(1.+.028*sin(time*.8)+amplitude*.14);vec2 p=uv/radius;
+float angle=thinking*.12*sin(time*.3);p=mat2(cos(angle),-sin(angle),sin(angle),cos(angle))*p;
+float r=length(p);float mask=1.-smoothstep(.991,1.006,r);if(mask<.001){gl_FragColor=vec4(0.);return;}
+// Colors sampled from the reference GIF after removing its pixel dithering.
+// Low-frequency flow keeps a pale upper cap and a blue lower hemisphere.
+vec3 q=vec3(p*1.15,time*.075);
+vec2 warp=vec2(fbm(q+vec3(0,0,0)),fbm(q+vec3(4,2,0)))-.5;
+float broad=fbm(vec3(p*2.1+warp*1.3,time*.10));
+float field=p.y+.24*p.x+.30*sin(p.x*2.1+time*.23)+.82*(broad-.5);
+field+=.09*sin(p.x*5.+p.y*2.+time*.27);
+field+=.12*(fbm(vec3(p*5.5+warp*2.,time*.12))-.5);
+vec3 deep=vec3(38.,133.,245.)/255.;
+vec3 sky=vec3(89.,183.,247.)/255.;
+vec3 turquoise=vec3(146.,218.,246.)/255.;
+vec3 mist=vec3(214.,245.,250.)/255.;
+vec3 cream=vec3(240.,249.,240.)/255.;
+vec3 color=mix(deep,sky,smoothstep(-.78,-.13,field));
+color=mix(color,turquoise,smoothstep(-.52,-.04,field));
+color=mix(color,mist,smoothstep(-.12,.43,field));
+// One soft, meandering light ribbon, instead of many contrasting islands.
+float ribbon=exp(-pow((field-.16)/.19,2.));
+color=mix(color,cream,ribbon*.94);
+float haze=fbm(vec3(p*2.2+warp,time*.06+9.));
+color=mix(color,mist,(haze-.3)*.11);
+float grain=hash(vec3(gl_FragCoord.xy,1.))-.5;color+=grain*.007;
+gl_FragColor=vec4(color,mask);}`;
+if(!gl){canvas.setAttribute('aria-label','WebGL unavailable');throw new Error('WebGL unavailable');}
+function shader(type,source){const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
+const program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vertex));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fragment));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));gl.useProgram(program);
+const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);const position=gl.getAttribLocation(program,'position');gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
+const uniforms=Object.fromEntries(['resolution','time','size','thinking','talking','amplitude'].map(k=>[k,gl.getUniformLocation(program,k)]));
+let state='idle',think=0,talk=0,amp=0,externalLevel=null,phase=0,last=0,cycleTimer=0;
+const scale=document.getElementById('scale'),energy=document.getElementById('energy'),simulate={checked:true},cycle={checked:false};
+const descriptions={idle:['A moment of stillness','Quietly here. Gently drifting.'],thinking:['A thought taking shape','Clouds gather. Something is coming together.'],talking:['A little more alive','Following the rhythm of a voice.']};
+function setState(next){if(!descriptions[next])return;state=next;cycleTimer=0;document.querySelectorAll('.mode').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.state===next)));}
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>setState(b.dataset.state));
+for(const input of [scale,energy])input.oninput=()=>document.getElementById(input.id+'Value').textContent=input.value+'%';
+window.addEventListener('keydown',e=>{if(e.target.matches('input,textarea,select'))return;const next={'1':'idle','2':'thinking','3':'talking'}[e.key];if(next)setState(next);});
+// Integration: voiceOrb.setState('talking'); voiceOrb.setAmplitude(rms);
+// Amplitude is a normalized 0–1 RMS/envelope. Disable simulation to feed real audio.
+window.voiceOrb={setState,setAmplitude(level){externalLevel=Number.isFinite(level)?Math.max(0,Math.min(1,level)):null;},setScale(value){scale.value=Math.max(60,Math.min(135,value*100));scale.oninput();}};
+
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+function draw(now){const t=now/1000,dt=Math.min(last?t-last:0,.05);last=t;const smooth=1-Math.exp(-dt*3.5);think+=((state==='thinking'?1:0)-think)*smooth;talk+=((state==='talking'?1:0)-talk)*smooth;
+const envelope=Math.pow(Math.max(0,Math.sin(t*2.8)+.32*Math.sin(t*7.3)),1.2)*(.55+.22*Math.sin(t*1.1));const level=simulate.checked?envelope:(externalLevel??0);amp+=(talk*level*energy.value/100-amp)*(1-Math.exp(-dt*12));phase+=dt*(reduced.matches?.14:.5+think*1.8+talk*.6);cycleTimer+=dt;if(cycle.checked&&cycleTimer>7)setState({idle:'thinking',thinking:'talking',talking:'idle'}[state]);
+const dpr=Math.min(devicePixelRatio||1,1.7),w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}gl.uniform2f(uniforms.resolution,w,h);gl.uniform1f(uniforms.time,phase);gl.uniform1f(uniforms.size,scale.value/100);gl.uniform1f(uniforms.thinking,think);gl.uniform1f(uniforms.talking,talk);gl.uniform1f(uniforms.amplitude,reduced.matches?amp*.2:amp);gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLES,0,6);
+requestAnimationFrame(draw);}
+requestAnimationFrame(draw);
+</script></body></html>

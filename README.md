@@ -32,3 +32,39 @@ node --check codex-voice-concierge-prototype/server.mjs
 Gateway smoke checks are described in each approach's README. They consume Gateway credits and use simulated Codex work.
 
 This repository was extracted from Flow state's tools directory. No remote repository is configured. Local dependencies and diagnostic recordings/logs are excluded from commits.
+
+## Desktop UI lab
+
+[desktop-prototype](desktop-prototype/README.md) adds an Electron menu bar app with three
+experimental presentations: a transcript panel, a floating voice capsule, and a bottom bar
+that follows the Codex window using a small native macOS helper. It reuses the conversational
+relay and keeps the two browser implementations available.
+
+```sh
+cd desktop-prototype
+npm ci
+npx install-electron
+npm start
+```
+
+## Voice launch skills and terminal UI
+
+Repository skills live in `.agents/skills`:
+
+- `codex-voice` opens the Mac chin and starts or stops voice bound to the originating Codex thread.
+- `codex-voice-terminal` opens Codex's built-in terminal panel and prepares the voice command. Automatic launch requires an app terminal execution tool; with the current open/read tools, you run the prepared command in that panel.
+
+The terminal interface shares the conversational relay and cost calculation. It has separate
+microphone/speaker waveforms, elapsed time, estimated voice cost, keyboard controls, and mouse
+buttons in terminals supporting SGR mouse reporting. Real audio uses a small macOS Swift helper.
+See [terminal setup and controls](terminal-prototype/README.md).
+
+For a preview with no microphone, relay connection, or Gateway usage:
+
+```sh
+node terminal-prototype/cli.mjs --thread preview --demo
+```
+
+Both interfaces bind an explicit thread ID. Start only one voice interface at a time;
+stopping voice leaves delegated Codex work running. These launch additions do not insert
+voice transcripts into Codex history or add a startup summarization call.

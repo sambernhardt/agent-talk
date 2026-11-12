@@ -38,3 +38,53 @@ Choose the existing work chat and enter voice mode. Talk conversationally, or ex
 Protocol references: https://vercel.com/docs/ai-gateway/modalities/realtime/gpt-live · https://learn.chatgpt.com/docs/cli/reference#codex-queue
 
 Verified: isolated Gateway smoke passed one delegated request, acknowledgment while pending, observed progress, and 235,200 bytes of spoken result audio. A stricter, concise delegation instruction was required after an initial run only offered to relay. The work backend was simulated for this check; human testing with actual Codex remains.
+
+## Session usage display
+
+The live counter shows elapsed time and an estimated voice cost at the published GPT-Live rate of $3/hour, verified November 10, 2026. Gateway cumulative usage snapshots update the estimate; the final provider duration determines the ended session total when available. A disconnect without final usage is marked approximate. Handoff-model calls and Codex work are excluded. See [Gateway pricing and usage](https://vercel.com/docs/ai-gateway/modalities/realtime/gpt-live).
+
+A ten-second on-screen summary appears when voice closes. The bottom history keeps the latest 100 completed sessions in this browser's local storage, across page reloads. It stores timestamps, durations, and estimated costs, not transcripts or audio. Browser storage restrictions may prevent persistence. The Gateway invoice remains the billing source of truth.
+
+Cost is displayed visually, with no automatic spoken announcements or checkbox. Ask the voice companion “What has this session cost?” to delegate a read-only question to the selected Codex chat. Every handoff carries a timestamped session snapshot (voice cost estimate, rate, elapsed time, provider usage if available, selected chat, and queued/working request IDs). This application data is appended directly rather than rewritten by the handoff model.
+
+Codex can query `GET /api/session` for fresher data using the same local Bearer token as `/api/threads`. Retrieve that token from the local UI HTML and use it only locally; do not print or queue it. The endpoint uses the existing Host check and authentication and returns no transcripts or audio. Costs continue accumulating while a request waits for Codex, so answers should identify their sample time. Without an active session the endpoint returns an empty sessions array.
+
+## Diagnosing missed handoffs
+
+The authenticated `/api/session` response includes a bounded timeline of the latest 40 handoff stages: delegation received, preparation started/finished (including `delegate`, `clarify`, or `none`), history baseline read, queue started/confirmed, work observed in Codex, and result observed. It records timestamps/IDs/statuses, not transcript text or credentials. The last input-transcript timestamp helps distinguish incoming speech from an actual delegation event. Diagnostic history is not appended to model handoffs.
+
+A confirmed queue submission is distinct from desktop pickup. Handoff preparation has a 15-second deadline; history RPCs have a 30-second deadline. The CLI queue currently has no deadline, so `queue-started` without confirmation can indicate a hung queue process; do not blindly retry because submission may already have happened. Missing delegation events still depend on the realtime model: a spoken promise to ask Codex is not proof of dispatch.
+
+Fixed regression: a leftover speech-threshold guard dropped quiet audio before Gateway received it, interfering with turn-end detection. `audio-relay.test.mjs` executes the actual browser-message handler and verifies that speech and subsequent quiet frames all reach Gateway.
+
+## Failure visibility from the main Codex chat
+
+Handoff stages and failures are asynchronously persisted to `handoff-diagnostics.jsonl` beside `server.mjs`, independent of `codex queue`. The file rotates at 1 MiB, keeping one backup (`.jsonl.1`); both are ignored by Git. Records include chat/session/delegation/job IDs, timestamp, failed phase, process exit code or signal, Gateway HTTP status when available, and a debugging hint. Transcripts, queued messages, raw stderr, audio, and credentials are excluded.
+
+Codex can read these files directly even if voice or the server has stopped. While the app is running, authenticated `GET /api/diagnostics?threadId=<chat-id>` returns the latest 200 matching records plus active session snapshots and a persistence-error flag. It uses the same local token as `/api/session` and remains available if the Codex history reader is unavailable. The next successful handoff also includes the active session's latest three failures as context. No synthetic chat messages are queued for error reporting. A currently idle Codex chat is not automatically awakened by file writes; ask it to inspect diagnostics, or it sees failure context on the next successful handoff.
+
+Look for `handoff-error.phase`: `preparation` means the text-model request/validation failed before queueing; `baseline-read` means history could not be read before submission; `queue` includes subprocess exit/signal details and requires checking the actual chat before retrying. `queue-confirmed` without `codex-observed` means the CLI succeeded but desktop pickup has not yet been observed. `start-error` captures startup failures. Errors from runtime voice connections are recorded without provider message text. Previously lost failures cannot be reconstructed from these new logs.
+
+## Frontend (Vite + React)
+
+Run `npm run dev` for the Vite frontend with React Fast Refresh and CSS hot updates,
+served through the existing local relay at http://127.0.0.1:4320. Vite's HMR socket
+uses `/vite-hmr`; voice uses `/voice`. The Gateway key stays in the relay environment.
+Run `npm start` to build with Vite and serve the production `dist/` assets from the
+same relay. `npm run build`, `npm run check`, and `npm test` build, type-check,
+and run local regression tests. Built assets are ignored by Git.
+
+The chat selector uses shadcn Command + Popover (cmdk/Radix). Its hidden native select
+retains the existing session-switching bridge. The static page shell and audio/session
+controller are bundled by Vite; audio capture, playback, and queue delivery remain
+independent of React renders. The streaming transcript is a React root using the official
+AI Elements Conversation, Message, and MessageResponse components, adapted locally;
+see `frontend/ai-elements/README.md` for source and license. Streamdown renders partial
+Markdown. `use-stick-to-bottom` follows new content and lets users scroll back, with
+a button to return to the latest message. Transcript updates are batched once per
+animation frame, completed rows are memoized, and the Markdown renderer is loaded
+separately from voice startup. Transcript content stays in browser memory.
+
+Theme colors follow system light/dark preferences. Pause tooltips are centered above
+the button with 13px text and 5px/8px padding. Session summary toasts float independently
+of the footer so they do not shift the control card.
