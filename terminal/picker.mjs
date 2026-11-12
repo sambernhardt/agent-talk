@@ -7,7 +7,7 @@ export function filterChats(chats, query) {
 }
 const plain = value => String(value || '').replace(/[\x00-\x1f\x7f-\x9f]/g, ' ');
 
-export function pickChat(chats, {input=process.stdin, output=process.stdout, preferredId, title='agent-talk · Choose a Codex chat'}={}) {
+export function pickChat(chats, {input=process.stdin, output=process.stdout, preferredId, title='AGENT TALK · Choose a Codex chat'}={}) {
   if (!chats.length) throw new Error('No Codex chats found. Create a chat in Codex and try again.');
   if (!input.isTTY || !output.isTTY) throw new Error('The chat picker requires an interactive terminal.');
   return new Promise(resolve => {
@@ -25,7 +25,7 @@ export function pickChat(chats, {input=process.stdin, output=process.stdout, pre
         const chat = matches[i];
         lines.push(`${i === selected ? '› ' : '  '}${plain(chat.name)}${chat.cwd ? ` · ${plain(chat.cwd)}` : ''}`);
       }
-      output.write('\x1b[H\x1b[2J' + lines.map(line => plain(line).slice(0,width)).join('\n'));
+      output.write('\x1b[H\x1b[2J' + lines.map((line,index) => { const clipped=plain(line).slice(0,width); return index===0?clipped.replace(/^AGENT TALK/, '\x1b[1mAGENT TALK\x1b[22m'):clipped; }).join('\n'));
     };
     const finish = chat => {
       input.off('keypress', onKey); output.off('resize', draw);

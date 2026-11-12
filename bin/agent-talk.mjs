@@ -16,7 +16,7 @@ function promptToken() {
   return new Promise(resolve => {
     let value=''; const wasRaw=process.stdin.isRaw;
     process.stdout.write('\x1b[?1049h\x1b[H\x1b[2J' + [
-      'agent-talk · Connect AI Gateway',
+      '\x1b[1mAGENT TALK\x1b[22m · Connect AI Gateway',
       'Paste your token · Enter continue · Esc cancel',
       '',
       'Your token stays hidden and is saved locally for future sessions.',
@@ -74,7 +74,7 @@ async function run() {
   const key=await credentials(); if(!key) return;
   let agent;
   do {
-    agent=await pickChat([{id:'codex',name:'Codex'},{id:'claude',name:'Claude · Coming soon'}],{title:'agent-talk · Choose your agent'});
+    agent=await pickChat([{id:'codex',name:'Codex'},{id:'claude',name:'Claude · Coming soon'}],{title:'AGENT TALK · Choose your agent'});
     if(!agent) return;
     if(agent.id==='claude') { console.log('Claude support is coming soon. Choose Codex to start voice.'); }
   } while(agent.id!=='codex');

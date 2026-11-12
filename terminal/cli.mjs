@@ -64,7 +64,7 @@ export async function resolveThreadLabel(opts, fetchImpl = fetch) {
   } catch { return 'Current chat'; }
 }
 export async function changeChat(session,{relay,list=listChats,pick=pickChat,demo=false}={}) {
-  const agent=await pick([{id:'codex',name:'Codex'},{id:'claude',name:'Claude · Coming soon'}],{title:'agent-talk · Change agent / chat'});
+  const agent=await pick([{id:'codex',name:'Codex'},{id:'claude',name:'Claude · Coming soon'}],{title:'AGENT TALK · Change agent / chat'});
   if(!agent)return false;
   if(agent.id!=='codex'){session.notice='Claude support is coming soon · press H to choose a Codex chat';return false;}
   const chats=demo?[{id:'preview',name:'Voice preview'},{id:'orb-preview',name:'Build voice orb animation'}]:await list(relay);
