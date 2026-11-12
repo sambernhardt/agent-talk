@@ -109,7 +109,7 @@ export async function main(args = process.argv.slice(2)) {
     if (input.length > 80) { input.shift(); output.shift(); }
     session.input *= .6; session.output *= .6;
     orbPhase += session.handoff?.status === 'working' || session.state === 'starting' ? .23 : (output.at(-1) || 0) > .025 ? .11 : .05;
-    const frame = render(session, {columns:process.stdout.columns || 80, rows:process.stdout.rows || 24, demo:opts.demo, input, output, time:tick/10, phase:orbPhase, ...settings, configOpen, color:Boolean(process.stdout.isTTY) && !opts.frames && !('NO_COLOR' in process.env)});
+    const frame = render(session, {columns:process.stdout.columns || 80, rows:process.stdout.rows || 24, demo:opts.demo, input, output, time:tick/10, phase:orbPhase, ...settings, configOpen, bold:Boolean(process.stdout.isTTY) && !opts.frames, color:Boolean(process.stdout.isTTY) && !opts.frames && !('NO_COLOR' in process.env)});
     if (opts.frames) process.stdout.write(frame + '\n');
     else screen.draw(frame, process.stdout.columns || 80);
   };

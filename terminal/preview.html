@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Terminal preview controls</title>
+<style>:root{color-scheme:dark;font:15px system-ui;background:#101216;color:#eee}body{max-width:640px;margin:48px auto;padding:0 24px}p{color:#adb8c8;line-height:1.6}fieldset{border:1px solid #343c48;border-radius:12px;margin:24px 0;padding:20px}legend,#status{color:#9bd6ff}label{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:16px 0}input,select,textarea{font:inherit;accent-color:#83ccff}input[type=text],select,textarea{background:#1b2029;color:white;border:1px solid #485465;border-radius:6px;padding:8px}textarea{box-sizing:border-box;width:100%;min-height:120px}input[type=text]{width:60%}</style>
+<h1>Terminal preview controls</h1><p>The terminal is the live display. Changes here stream to its renderer. No audio or billed calls.</p><p id="status">Connecting…</p>
+<fieldset><legend>Display</legend>
+<label>Characters<select name="characterPreset"><option value="original">Original · .:;-=+*#%@</option><option value="dense">Dense ASCII · =+*#%@</option><option value="blocks">Blocks · ░▒▓█</option><option value="dots">Dots · ·•●</option><option value="solid">Solid · █</option><option value="custom">Custom</option></select></label>
+<label>Custom characters<input type="text" name="customCharacters" maxlength="64"></label>
+<p>Characters run from light to dense. Custom supports ASCII and · • ● ░ ▒ ▓ █.</p>
+<label>Chat title<input type="text" name="threadLabel"></label>
+<label>Transcript<input type="checkbox" name="showTranscript"></label>
+<label>IN / OUT waveforms<input type="checkbox" name="showWaveforms"></label>
+<label>Config overlay<input type="checkbox" name="configOpen"></label>
+<label>Color<input type="checkbox" name="color"></label>
+<label>Animate<input type="checkbox" name="animate"></label>
+<label>Animation speed<input type="range" name="speed" min="0" max="3" step="0.05"></label>
+</fieldset><fieldset><legend>Session fixture</legend>
+<label>State<select name="state"><option>idle</option><option>starting</option><option>listening</option><option>ended</option><option>error</option></select></label>
+<label>Codex job<select name="job"><option>none</option><option>queued</option><option>working</option><option>completed</option><option>failed</option></select></label>
+<label>Microphone muted<input type="checkbox" name="muted"></label>
+<label>Input level<input type="range" name="inputLevel" min="0" max="1" step="0.01"></label>
+<label>Output level<input type="range" name="outputLevel" min="0" max="1" step="0.01"></label>
+<label>Notice<input type="text" name="notice"></label>
+<label for="transcript">Transcript (Speaker: message per line)</label><textarea id="transcript" name="transcript"></textarea>
+</fieldset><p>Changes apply only to this preview. Quit with Q in the terminal.</p>
+<script>
+const status=document.querySelector('#status'),fields=[...document.querySelectorAll('[name]')];let socket,revision;
+function connect(){socket=new WebSocket(`ws://${location.host}/config?token=__TOKEN__`);socket.onopen=()=>{status.textContent='Connected · streaming to terminal';fields.forEach(el=>el.disabled=false);};socket.onmessage=event=>{const data=JSON.parse(event.data);if(data.revision){if(revision&&revision!==data.revision){location.reload();return;}revision=data.revision;}if(data.error){status.textContent=data.error;return;}for(const field of fields){if(field.type==='checkbox')field.checked=data.config[field.name];else field.value=data.config[field.name];}};socket.onclose=()=>{status.textContent='Disconnected · terminal preview unavailable';fields.forEach(el=>el.disabled=true);setTimeout(connect,1500);};socket.onerror=()=>socket.close();}
+fields.forEach(field=>{field.disabled=true;field.addEventListener('input',()=>{if(socket.readyState!==WebSocket.OPEN)return;if(field.name==='customCharacters'&&!field.value)return;socket.send(JSON.stringify({...(field.name==='customCharacters'?{characterPreset:'custom'}:{}),[field.name]:field.type==='checkbox'?field.checked:field.type==='range'?Number(field.value):field.value}));});});connect();
+</script>

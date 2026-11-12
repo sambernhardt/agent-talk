@@ -13,7 +13,7 @@ export function layout(s,{columns=80,rows=24,configOpen=false}={}){
  if(configOpen)hits.push({x:Math.max(0,width-24),y:2,text:'[T] Transcript',key:'t'},{x:Math.max(0,width-24),y:3,text:'[W] Waveforms',key:'w'});
  return {width,title,changeX,hits};
 }
-export function render(s,{columns=80,rows=24,demo=false,input=[],output=[],time=0,phase:motionPhase,color=false,showTranscript=false,showWaveforms=false,configOpen=false}={}){
+export function render(s,{columns=80,rows=24,demo=false,input=[],output=[],time=0,phase:motionPhase,color=false,bold=color,showTranscript=false,showWaveforms=false,configOpen=false,characterPreset='solid',customCharacters}={}){
  const {width,title,changeX,hits}=layout(s,{columns,rows,configOpen}),height=Math.max(1,rows-1),lines=Array(height).fill(''),cost=s.cost?.snapshot();
  const put=(y,text)=>{if(y>=0&&y<height)lines[y]=text.slice(0,width);};
  const overlay=(y,x,text)=>{if(y>=0&&y<height)lines[y]=(lines[y].slice(0,x).padEnd(x)+text).slice(0,width);};
@@ -25,7 +25,7 @@ export function render(s,{columns=80,rows=24,demo=false,input=[],output=[],time=
  const bottom=Math.max(top,height-4);
  if(showTranscript){const transcript=transcriptLines(s.messages||[],columns),count=Math.min(transcript.length,Math.max(0,bottom-top+1));const start=bottom-count+1;transcript.slice(-count||transcript.length).forEach((line,i)=>put(start+i,line));}
  const available=Math.max(0,bottom-top),orbHeight=Math.min(14,available),level=output.at(-1)??s.output??0,state=orbState(s,level),phase=motionPhase??time*(state==='thinking'?2.3:state==='talking'?1.1:.5);
- const orb=showTranscript?[]:asciiOrb({columns:width,rows:orbHeight,time:phase,state,amplitude:level,color}),orbTop=top+Math.floor((available-orb.length)/2);
+ const orb=showTranscript?[]:asciiOrb({columns:width,rows:orbHeight,time:phase,state,amplitude:level,color,characterPreset,customCharacters}),orbTop=top+Math.floor((available-orb.length)/2);
  orb.forEach((line,i)=>{lines[orbTop+i]=line;});
  const notice=clean(s.notice);if(notice!=='Press S to start'&&!notice.startsWith('Ready ·')&&!notice.startsWith('Voice companion handoff ·'))put(height-3,`  ${notice}`);
  for(const hit of hits)if(!['t','w'].includes(hit.key))overlay(hit.y,hit.x,hit.text);
@@ -34,6 +34,7 @@ export function render(s,{columns=80,rows=24,demo=false,input=[],output=[],time=
   if(color)lines[4]=`\x1b[90m${lines[4]}\x1b[39m`;
   if(s.handoff?.path)lines[4]=`\x1b]8;;${pathToFileURL(s.handoff.path).href}\x1b\\${lines[4]}\x1b]8;;\x1b\\`;
  }
+ if(bold)lines[0]=lines[0].replace('AGENT TALK','\x1b[1mAGENT TALK\x1b[22m');
  return lines.join('\n');
 }
 export class Controls{

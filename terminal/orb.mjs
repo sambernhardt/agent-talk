@@ -23,14 +23,21 @@ export function orbState(session, output=0) {
   if(output>.025)return 'talking';
   return ['queued','working'].includes(session.handoff?.state)?'thinking':'idle';
 }
-export function asciiOrb({columns=80,rows=8,time=0,state='idle',amplitude=0,color=false}={}) {
+export const characterPresets = {
+  original: '.:;-=+*#%@',
+  dense: '=+*#%@',
+  blocks: '░▒▓█',
+  dots: '·•●',
+  solid: '█',
+};
+export function asciiOrb({columns=80,rows=8,time=0,state='idle',amplitude=0,color=false,characterPreset='solid',customCharacters='.:;-=+*#%@'}={}) {
   rows=Math.max(0,Math.floor(rows));columns=Math.max(0,Math.floor(columns));
   if(rows<4||columns<12)return [];
   const width=Math.min(columns-4,rows*2),height=Math.min(rows,Math.floor(width/2));
   const indent=' '.repeat(Math.max(2,Math.floor((columns-width)/2)));
   const level=state==='talking'?clamp(amplitude):0;
   const radius=.81+.025*Math.sin(time*.8)+level*.13;
-  const chars='.:;-=+*#%@',lines=[];
+  const chars=Array.from(characterPreset==='custom'?(customCharacters||characterPresets.original):(characterPresets[characterPreset]||characterPresets.original)),lines=[];
   for(let row=0;row<height;row++){
     let line=indent;
     for(let col=0;col<width;col++){

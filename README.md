@@ -75,3 +75,24 @@ npx agent-talk install-codex-voice-action ~/Dev/project-one ~/Dev/project-two
 This adds **Voice** to each project's `.codex/environments/environment.toml`. The action runs `npx agent-talk` in Codex's integrated terminal. Existing actions, setup scripts, comments, and formatting are preserved. Re-running the installer skips an existing installation; a conflicting Voice action or invalid configuration is left untouched and reported. Installation needs no microphone, credentials, or running relay.
 
 Open the project in Codex and choose **Voice** in the toolbar actions. If missing, select the project's local environment in settings. Actions are project-specific; installation does not create a global toolbar button.
+
+## Browser-driven terminal preview
+
+```sh
+npm run preview
+# or: node bin/agent-talk.mjs preview
+```
+
+Run in an interactive terminal and open the printed local URL in your browser.
+The browser is the control panel; the terminal renders the live output using the
+same renderer as the voice client. Toggles, text inputs, session/job state,
+waveform levels, and animation speed stream over a local WebSocket. Changes stay
+in the preview and do not alter saved preferences. No credentials or audio are
+needed. Press Q or Ctrl-C in the terminal to stop both the preview and server.
+
+Character presets include Original (the initial ASCII ramp), Dense ASCII, Blocks,
+Dots, Solid, and Custom. Type a custom ramp from light to dense to switch to Custom
+immediately; all presets keep the same colors. Solid is the default. Preview development watches terminal
+`.mjs` and `.html` sources: edits restart the local renderer/server, refresh the
+browser, and preserve the control URL and current settings. Restart the preview once
+when upgrading an older running version to enable this watcher.

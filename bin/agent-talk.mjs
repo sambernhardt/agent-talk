@@ -8,6 +8,7 @@ import {fileURLToPath} from 'node:url';
 import {installProjects} from './install.mjs';
 import {pickChat} from '../terminal/picker.mjs';
 import {main as terminal} from '../terminal/cli.mjs';
+import {previewDev as preview} from '../terminal/preview-dev.mjs';
 
 const configDir = path.join(homedir(), '.config', 'agent-talk');
 const configFile = path.join(configDir, 'config.json');
@@ -58,8 +59,9 @@ async function freePort() {
 async function run() {
   const args=process.argv.slice(2);
   if(args.includes('--help') || args.includes('-h')) {
-    console.log('agent-talk\nUsage: agent-talk [setup | --demo | --help]\n       agent-talk install-codex-voice-action [PROJECT_DIR ...]\n\nChoose an agent, filter your chats, and press Enter to start voice.\nCodex supported; Claude coming soon.\nRequires macOS, Swift command line tools, Codex CLI with queue support,\nand an AI Gateway token. S start, X stop, M mute, Q quit.\ninstall-codex-voice-action adds a Codex Voice toolbar action to each project (default: current directory).\nsetup replaces the saved token; AI_GATEWAY_API_KEY overrides saved credentials.');return;
+    console.log('agent-talk\nUsage: agent-talk [setup | preview | --demo | --help]\n       agent-talk install-codex-voice-action [PROJECT_DIR ...]\n\nChoose an agent, filter your chats, and press Enter to start voice.\nCodex supported; Claude coming soon.\nRequires macOS, Swift command line tools, Codex CLI with queue support,\nand an AI Gateway token. S start, X stop, M mute, Q quit.\ninstall-codex-voice-action adds a Codex Voice toolbar action to each project (default: current directory).\nsetup replaces the saved token; AI_GATEWAY_API_KEY overrides saved credentials.');return;
   }
+  if(args[0]==='preview') { if(args.length!==1)throw Error('Usage: agent-talk preview');return preview(); }
   if(args[0]==='install-codex-voice-action') {
     if(args.slice(1).some(arg=>arg.startsWith('-'))) throw Error('Usage: agent-talk install-codex-voice-action [PROJECT_DIR ...]');
     process.exitCode=await installProjects(args.slice(1));return;
