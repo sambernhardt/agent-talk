@@ -25,6 +25,7 @@
     "terminal-prototype/picker.mjs",
     "terminal-prototype/session.mjs",
     "terminal-prototype/ui.mjs",
+    "terminal-prototype/orb.mjs",
     "codex-voice-concierge-prototype/diagnostics.mjs",
     "codex-voice-concierge-prototype/handoff.mjs",
     "codex-voice-concierge-prototype/queue-message.mjs",
@@ -43,7 +44,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sambernhardt/voice-mode.git"
+    "url": "git+https://github.com/sambernhardt/agent-talk.git"
   },
-  "homepage": "https://github.com/sambernhardt/voice-mode"
+  "homepage": "https://github.com/sambernhardt/agent-talk"
 }
